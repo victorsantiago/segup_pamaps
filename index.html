@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Segurança Púbica - Ocorrências por Distrito/Bairros</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
+
+  <style>
+    :root{ --bg:#ffffff; --panel:#f5f7fb; --text:#0b1020; --muted:#5b6b82; --border:#e9eef7; }
+    html, body { height: 100%; margin: 0; background: var(--bg); color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial; }
+    .app { display:grid; grid-template-rows:auto 1fr auto; height:100%; }
+
+    header { display:flex; flex-wrap:wrap; gap:16px; align-items:center; padding:12px 16px;
+      background:var(--panel); box-shadow:0 2px 12px rgba(0,0,0,.08); position:sticky; top:0; z-index:1000; }
+    header h1 { font-size:18px; margin:0; letter-spacing:.2px; }
+    .controls { display:flex; flex-wrap:wrap; gap:10px; align-items:center; font-size:14px; color:var(--muted); }
+    .badge { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; background:#eef2f9; }
+    .select { padding:6px 10px; border:1px solid #dbe3f0; border-radius:8px; background:#fff; color:#0b1020; }
+
+    #map { height: 100%; }
+
+    .legend, .color-legend { position:absolute; right:10px; background:rgba(255,255,255,0.98); color:#111827;
+      padding:10px 12px; border-radius:10px; font:12px system-ui; z-index:500; border:1px solid var(--border); }
+    .legend { bottom: 20px; }
+    .legend .row { display:flex; align-items:center; margin:4px 0; gap:8px; }
+    .legend .dot { width:14px; height:14px; border-radius:4px; background:#1976d2; }
+
+    .color-legend { bottom: 120px; max-width:320px; }
+    .color-legend h4 { margin:0 0 6px; }
+    .color-legend .items { display:flex; flex-wrap:wrap; gap:4px 12px; max-height:400px; overflow-y:auto; }
+    .color-legend .item { display:flex; align-items:center; gap:8px; margin:2px 0; }
+    .color-legend .box { width:14px; height:14px; border-radius:3px; }
+    /* duas colunas quando for "Todos os bairros" */
+    .color-legend.two-cols .item { width:48%; }
+
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .title-block h1 {
+      margin: 0;
+    }
+
+    .title-block .fonte {
+      font-size: 12px;
+      margin-top: 2px;
+      color: #4b5563; /* cinza suave */
+    }
+
+    .timeline { position: fixed; left: 20px; right: 20px; bottom: 16px; z-index: 1000; display: none;
+      padding: 10px 16px; background: transparent; border-top: 1px solid rgba(0,0,0,0.2); }
+    .timeline .label { margin: 0 0 8px 2px; color: #1976d2; font: 700 13px system-ui;
+      text-shadow: 0 1px 2px rgba(255,255,255,0.6); }
+    .timeline .track { position: relative; height: 8px; background: #1976d2; border-radius: 999px;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.8); }
+    .timeline .handle { position: absolute; top: 50%; transform: translate(-50%, -50%);
+      width: 20px; height: 20px; border-radius: 50%; background: #0d47a1;
+      border: 2px solid #bbdefb; box-shadow: 0 2px 8px rgba(0,0,0,0.35); cursor: grab; }
+    .timeline .ticks { display:flex; justify-content: space-between; margin-top: 6px;
+      color: #1976d2; font: 700 12px/1 system-ui;
+      text-shadow: 0 1px 2px rgba(255,255,255,0.6); }
+    .timeline .year { user-select: none; }
+
+    .kml-busy { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+      background:rgba(0,0,0,0.75); color:#fff; padding:8px 12px; border-radius:8px; display:none; z-index:700; }
+
+    .leaflet-popup-content-wrapper { border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.15); }
+    .leaflet-popup-content { margin: 12px 16px; }
+
+    table.minimal { border-collapse: collapse; width: 100%; font-size: 12px; }
+    table.minimal td, table.minimal th { border-bottom: 1px solid #eee; padding: 4px 6px; text-align: left; }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header>
+      <div class="title-block">
+        <h1>Segurança Pública no Pará (Ocorrências por Distrito/Bairro)</h1>
+        <span class="fonte">Fonte: SEGUP - Secretaria de Estado de Segurança Pública e Defesa Social (2020-2024).</span>
+      </div>
+      <div class="controls">
+        <label class="badge">Tipo:
+          <select id="tipoSel" class="select">
+            <option value="__all__">Todas</option>
+            <option value="ameaca">Ameaça</option>
+            <option value="consumo_de_drogas">Consumo de Drogas</option>
+            <option value="estupro">Estupro</option>
+            <option value="estupro_de_vulneravel">Estupro de vulnerável</option>
+            <option value="furto">Furto</option>
+            <option value="homicidio">Homicídio</option>
+            <option value="homicidio_culposo_no_transito">Homicídio culposo no trânsito</option>
+            <option value="latrocinio">Latrocínio</option>
+            <option value="lesao_corporal">Lesão corporal</option>
+            <option value="lesao_corporal_seguida_de_morte">Lesão corporal seguida de morte</option>
+            <option value="maus_tratos_com_resultado_morte">Maus-tratos com resultado morte</option>
+            <option value="morte_no_transito">Morte no trânsito</option>
+            <option value="roubo">Roubo</option>
+            <option value="trafico_de_drogas">Tráfico de drogas</option>
+          </select>
+        </label>
+
+        <label class="badge">Ano:
+          <select id="anoSel" class="select"></select>
+        </label>
+
+        <label class="badge">Distrito:
+          <select id="distritoSel" class="select">
+            <option value="__all__">Todos</option>
+          </select>
+        </label>
+
+        <label class="badge">Bairro:
+          <select id="bairroSel" class="select">
+            <option value="__all__">Todos</option>
+          </select>
+        </label>
+
+        <span class="badge"><strong id="sumTotal">—</strong> total no ano</span>
+        <button id="btnReset" class="badge" style="cursor:pointer;">Limpar</button>
+      </div>
+    </header>
+
+    <div id="map"></div>
+
+    <div class="timeline" id="timeline">
+      <div class="label">Linha do tempo (arraste o marcador)</div>
+      <div class="track" id="track">
+        <div class="handle" id="handle" style="left:0%;"></div>
+      </div>
+      <div class="ticks" id="ticks"></div>
+    </div>
+  </div>
+
+  <div id="busy" class="kml-busy">Carregando dados...</div>
+
+  <div class="legend">
+    <h4 style="margin:0 0 6px;">Densidade de ocorrências</h4>
+    <div class="row"><span class="dot" style="opacity:0.2"></span> Baixa</div>
+    <div class="row"><span class="dot" style="opacity:0.55"></span> Média</div>
+    <div class="row"><span class="dot" style="opacity:0.9"></span> Alta</div>
+  </div>
+
+  <div class="color-legend" id="colorLegend">
+    <h4>Bairros</h4>
+    <div class="items" id="colorLegendItems"></div>
+  </div>
+
+  <script>
+    // =========================
+    // CONFIG
+    // =========================
+    const CSV_DIR = "data/";
+    const KML_DIR = "kml_poligonos/";
+
+    const CSV_SOURCES = [
+      { key: "ameaca",                        path: CSV_DIR + "ameaca.csv",                        label: "Ameaça" },
+      { key: "consumo_de_drogas",             path: CSV_DIR + "consumo_de_drogas.csv",             label: "Consumo de drogas" },
+      { key: "estupro",                       path: CSV_DIR + "estupro.csv",                       label: "Estupro" },
+      { key: "estupro_de_vulneravel",         path: CSV_DIR + "estupro_de_vulneravel.csv",         label: "Estupro de vulnerável" },
+      { key: "furto",                         path: CSV_DIR + "furto.csv",                         label: "Furto" },
+      { key: "homicidio",                     path: CSV_DIR + "homicidio.csv",                     label: "Homicídio" },
+      { key: "homicidio_culposo_no_transito", path: CSV_DIR + "homicidio_culposo_no_transito.csv", label: "Homicídio culposo no trânsito" },
+      { key: "latrocinio",                    path: CSV_DIR + "latrocinio.csv",                    label: "Latrocínio" },
+      { key: "lesao_corporal",                path: CSV_DIR + "lesao_corporal.csv",                label: "Lesão corporal" },
+      { key: "lesao_corporal_seguida_de_morte", path: CSV_DIR + "lesao_corporal_seguida_de_morte.csv", label: "Lesão corporal seguida de morte" },
+      { key: "maus_tratos_com_resultado_morte", path: CSV_DIR + "maus_tratos_com_resultado_morte.csv", label: "Maus-tratos com resultado morte" },
+      { key: "morte_no_transito",             path: CSV_DIR + "morte_no_transito.csv",             label: "Morte no trânsito" },
+      { key: "roubo",                         path: CSV_DIR + "roubo.csv",                         label: "Roubo" },
+      { key: "trafico_de_drogas",             path: CSV_DIR + "trafico_de_drogas.csv",             label: "Tráfico de drogas" }
+    ];
+
+    const COLOR_PALETTE = [
+      "#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b",
+      "#e377c2","#7f7f7f","#bcbd22","#17becf"
+    ];
+    const COLOR_MAP = {}; // bairroKey -> cor
+
+    function colorForRegion(key){
+      if (!COLOR_MAP[key]) {
+        const idx = Object.keys(COLOR_MAP).length % COLOR_PALETTE.length;
+        COLOR_MAP[key] = COLOR_PALETTE[idx];
+      }
+      return COLOR_MAP[key];
+    }
+
+    function normalizeName(s){
+      if (!s) return "";
+      return String(s)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^A-Za-z0-9 ]+/g," ")
+        .replace(/\s+/g," ")
+        .trim()
+        .toUpperCase();
+    }
+
+    function slug(s){
+      if (!s) return "";
+      return String(s)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g,"")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g,"_")
+        .replace(/^_+|_+$/g,"");
+    }
+
+    function parseNumber(val){
+      if (val === null || val === undefined) return NaN;
+      if (typeof val === "number") return val;
+      let s = String(val).trim();
+      if (!s) return NaN;
+      if (s.indexOf(",") >= 0 && s.indexOf(".") === -1) {
+        s = s.replace(",", ".");
+      }
+      s = s.replace(/\s+/g,"");
+      const n = parseFloat(s);
+      return Number.isFinite(n) ? n : NaN;
+    }
+
+    function setBusy(on){
+      document.getElementById("busy").style.display = on ? "block" : "none";
+    }
+
+    // =========================
+    // MAPA
+    // =========================
+    const map = L.map('map').setView([-1.4558, -48.4902], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    const districtLayers = {};      // bairroKey -> LayerGroup (polígono)
+    const districtNameByKey = {};   // bairroKey -> nome do bairro
+    const popupLayer = L.layerGroup().addTo(map);
+    const markersLayer = L.layerGroup(); // será adicionado depois dos KMLs
+
+    // cache de polígonos: bairroKey -> [ [ [lat,lng], ... ] , ... ]
+    const polygonCache = {};
+
+    // =========================
+    // DADOS
+    // =========================
+    const yearCachePerType = {};  // tipo -> ano -> {byRegion:{}, min,max}
+    const yearCacheAll = {};      // ano -> {byRegion:{}, min,max}
+
+    const bairrosMeta = {};       // bairroKey -> { name, distKey, distritoNome }
+    const distritoMeta = {};      // distKey -> { name }
+    const bairroToDist = {};      // bairroKey -> distKey
+
+    const pointsPerType = {};     // tipo -> ano -> [pontos]
+    const pointsAll = {};         // ano -> [pontos]
+
+    let YEARS = [];
+    let currentYear = null;
+
+    async function loadCsv(path){
+      return new Promise((resolve) => {
+        Papa.parse(path, {
+          header: true,
+          download: true,
+          dynamicTyping: true,
+          complete: (res) => {
+            const rows = (res.data || []).filter(r => r && r.ano && r.bairro);
+            resolve(rows);
+          },
+          error: () => resolve([])
+        });
+      });
+    }
+
+    async function preloadCsvs(){
+      const yearSet = new Set();
+
+      for (const src of CSV_SOURCES){
+        const rows = await loadCsv(src.path);
+        const cache = {};
+        const pts  = {};
+        yearCachePerType[src.key] = cache;
+        pointsPerType[src.key] = pts;
+
+        for (const r of rows){
+          const ano = parseInt(r.ano,10);
+          if (!ano || isNaN(ano)) continue;
+
+          const bairroRaw = r.bairro;
+          if (!bairroRaw) continue;
+          const bairroKey = normalizeName(bairroRaw);
+
+          const distritoRaw = r.distrito || "";
+          const distKey = distritoRaw ? normalizeName(distritoRaw) : "";
+
+          yearSet.add(ano);
+
+          if (!bairrosMeta[bairroKey]) {
+            bairrosMeta[bairroKey] = {
+              name: String(bairroRaw).trim(),
+              distKey: distKey || null,
+              distritoNome: distritoRaw ? String(distritoRaw).trim() : ""
+            };
+          }
+          if (!bairroToDist[bairroKey] && distKey){
+            bairroToDist[bairroKey] = distKey;
+          }
+          if (distKey && !distritoMeta[distKey]){
+            distritoMeta[distKey] = { name: distritoRaw.trim() };
+          }
+
+          if (!cache[ano]) cache[ano] = { byRegion:{}, min:0, max:0 };
+          const yearObj = cache[ano];
+          if (!yearObj.byRegion[bairroKey]) yearObj.byRegion[bairroKey] = { total:0, byType:{} };
+          const reg = yearObj.byRegion[bairroKey];
+          reg.total += 1;
+          reg.byType[src.label] = (reg.byType[src.label] || 0) + 1;
+
+          const latVal = r.latitude ?? r.Latitude ?? r.LATITUDE ?? r.lat ?? r.Lat ?? r.LAT;
+          const lngVal = r.longitude ?? r.Longitude ?? r.LONGITUDE ?? r.lon ?? r.lng ?? r.LON;
+
+          const lat = parseNumber(latVal);
+          const lng = parseNumber(lngVal);
+
+          if (Number.isFinite(lat) && Number.isFinite(lng)){
+            if (!pts[ano]) pts[ano] = [];
+            const p = {
+              lat, lng,
+              ano,
+              bairroRaw,
+              bairroKey,
+              distrito: distritoRaw,
+              mes: r.mes || "",
+              local: r.local_ocorrencia || "",
+              typeKey: src.key,
+              typeLabel: src.label
+            };
+            pts[ano].push(p);
+
+            if (!pointsAll[ano]) pointsAll[ano] = [];
+            pointsAll[ano].push(p);
+          }
+        }
+
+        for (const [ano, obj] of Object.entries(cache)){
+          const totals = Object.values(obj.byRegion).map(o => o.total);
+          obj.min = totals.length ? Math.min(...totals) : 0;
+          obj.max = totals.length ? Math.max(...totals) : 0;
+        }
+      }
+
+      // ALL (somando tipos)
+      for (const src of CSV_SOURCES){
+        const perType = yearCachePerType[src.key];
+        for (const [ano, obj] of Object.entries(perType)){
+          const anoNum = parseInt(ano,10);
+          if (!yearCacheAll[anoNum]) yearCacheAll[anoNum] = { byRegion:{}, min:0, max:0 };
+          const allYear = yearCacheAll[anoNum];
+
+          for (const [bairroKey, reg] of Object.entries(obj.byRegion)){
+            if (!allYear.byRegion[bairroKey]) allYear.byRegion[bairroKey] = { total:0, byType:{} };
+            const dest = allYear.byRegion[bairroKey];
+            dest.total += reg.total;
+            for (const [lbl,v] of Object.entries(reg.byType)){
+              dest.byType[lbl] = (dest.byType[lbl] || 0) + v;
+            }
+          }
+        }
+      }
+
+      for (const [ano, obj] of Object.entries(yearCacheAll)){
+        const totals = Object.values(obj.byRegion).map(o => o.total);
+        obj.min = totals.length ? Math.min(...totals) : 0;
+        obj.max = totals.length ? Math.max(...totals) : 0;
+      }
+
+      YEARS = Array.from(yearSet).sort((a,b)=>a-b);
+      if (!YEARS.length) YEARS = [2024];
+      currentYear = YEARS[YEARS.length - 1];
+    }
+
+    // =========================
+    // AUX: flatten + point-in-polygon
+    // =========================
+    function flattenLatLngs(latlngs){
+      if (!Array.isArray(latlngs)) return [];
+      if (latlngs.length === 0) return [];
+      if (latlngs[0] instanceof L.LatLng){
+        return [latlngs];
+      }
+      let result = [];
+      latlngs.forEach(sub => {
+        result = result.concat(flattenLatLngs(sub));
+      });
+      return result;
+    }
+
+    function pointInPolygon(lat, lng, poly){
+      let inside = false;
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+        const xi = poly[i][0], yi = poly[i][1];
+        const xj = poly[j][0], yj = poly[j][1];
+
+        const intersect = ((yi > lng) !== (yj > lng)) &&
+                          (lat < (xj - xi) * (lng - yi) / (yj - yi + 1e-12) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+    function pointInAnyPolygon(lat, lng, bairroKey){
+      const polys = polygonCache[bairroKey];
+      if (!polys || !polys.length) return true; // se não tiver polígono, não filtra
+      for (const poly of polys){
+        if (pointInPolygon(lat, lng, poly)) return true;
+      }
+      return false;
+    }
+
+    // =========================
+    // KMLs (um por bairro)
+    // =========================
+    async function loadAllKmls(){
+      const keys = Object.keys(bairrosMeta);
+      for (const key of keys){
+        const meta = bairrosMeta[key];
+        const file = KML_DIR + slug(meta.name) + ".kml";
+
+        await new Promise((resolve) => {
+          const group = omnivore.kml(encodeURI(file));
+          group.on("ready", function(){
+            const color = colorForRegion(key);
+            applyStyle(group, color, 0.25);
+            districtLayers[key] = group;
+            districtNameByKey[key] = meta.name;
+
+            const polygons = [];
+            group.eachLayer(function(lyr){
+              if (lyr.getLatLngs){
+                const rings = flattenLatLngs(lyr.getLatLngs());
+                rings.forEach(r => {
+                  polygons.push(r.map(ll => [ll.lat, ll.lng]));
+                });
+              }
+            });
+            polygonCache[key] = polygons;
+
+            group.eachLayer(function(lyr){
+              lyr.on("click", (e) => {
+                const html = buildPopupHtmlForRegion(key);
+                const latlng = e.latlng || (lyr.getBounds ? lyr.getBounds().getCenter() : map.getCenter());
+                L.popup()
+                  .setLatLng(latlng)
+                  .setContent(html)
+                  .openOn(map);
+              });
+            });
+
+            group.addTo(map);
+            resolve();
+          });
+          group.on("error", function(){
+            console.warn("Falha ao carregar KML:", file);
+            resolve();
+          });
+        });
+      }
+    }
+
+    function applyStyle(group, color, opacity){
+      group.eachLayer(function(lyr){
+        if (lyr.setStyle){
+          lyr.setStyle({
+            color: color,
+            weight: 1.2,
+            opacity: opacity,
+            fillColor: color,
+            fillOpacity: opacity
+          });
+        }
+      });
+    }
+
+    function fitAllVisible(){
+      try{
+        const visible = [];
+        for (const [key, group] of Object.entries(districtLayers)){
+          if (map.hasLayer(group)) visible.push(group);
+        }
+        if (!visible.length) return;
+        const fg = L.featureGroup(visible);
+        map.fitBounds(fg.getBounds(), { padding:[20,20] });
+      } catch(e){}
+    }
+
+    // =========================
+    // UI SELECTS / LEGEND
+    // =========================
+    const distritoSelEl = document.getElementById("distritoSel");
+    const bairroSelEl = document.getElementById("bairroSel");
+
+    function buildYearSelect(){
+      const sel = document.getElementById("anoSel");
+      sel.innerHTML = "";
+      YEARS.forEach(y => {
+        const opt = document.createElement("option");
+        opt.value = String(y);
+        opt.textContent = String(y);
+        sel.appendChild(opt);
+      });
+      sel.value = String(currentYear);
+    }
+
+    function buildDistritoSelect(){
+      distritoSelEl.querySelectorAll("option:not([value='__all__'])").forEach(o => o.remove());
+      const list = Object.entries(distritoMeta)
+        .map(([key,val]) => ({ key, name: val.name }))
+        .sort((a,b) => a.name.localeCompare(b.name,"pt-BR"));
+      for (const item of list){
+        const o = document.createElement("option");
+        o.value = item.key;
+        o.textContent = item.name;
+        distritoSelEl.appendChild(o);
+      }
+    }
+
+    function buildBairroSelect(){
+      const distFilter = distritoSelEl.value;
+      bairroSelEl.innerHTML = '<option value="__all__">Todos</option>';
+
+      const list = Object.entries(bairrosMeta)
+        .filter(([key,meta]) => {
+          if (!distFilter || distFilter === "__all__") return true;
+          return meta.distKey === distFilter;
+        })
+        .map(([key,val]) => ({ key, name: val.name }))
+        .sort((a,b) => a.name.localeCompare(b.name,"pt-BR"));
+
+      for (const item of list){
+        const o = document.createElement("option");
+        o.value = item.key;
+        o.textContent = item.name;
+        bairroSelEl.appendChild(o);
+      }
+      bairroSelEl.value = "__all__";
+    }
+
+    function buildColorLegend(){
+      const legend  = document.getElementById("colorLegend");
+      const itemsEl = document.getElementById("colorLegendItems");
+      itemsEl.innerHTML = "";
+
+      const bairroSel = bairroSelEl.value;
+      const distFilter = distritoSelEl.value;
+
+      // Caso 1: há um bairro específico selecionado → mostra só ele
+      if (bairroSel && bairroSel !== "__all__" && bairrosMeta[bairroSel]) {
+        legend.classList.remove("two-cols");
+        const meta = bairrosMeta[bairroSel];
+        const c = colorForRegion(bairroSel);
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = '<span class="box" style="background:'+c+'"></span><span>'+meta.name+'</span>';
+        itemsEl.appendChild(div);
+        return;
+      }
+
+      // Caso 2: "Todos" os bairros, mas com possível filtro de distrito
+      legend.classList.add("two-cols");
+
+      const list = Object.entries(bairrosMeta)
+        .filter(([key, meta]) => {
+          // se não houver distrito selecionado, entram todos
+          if (!distFilter || distFilter === "__all__") return true;
+          // senão, apenas bairros do distrito escolhido
+          return meta.distKey === distFilter;
+        })
+        .map(([key, val]) => ({ key, name: val.name }))
+        .sort((a,b) => a.name.localeCompare(b.name, "pt-BR"));
+
+      list.forEach(item => {
+        const c = colorForRegion(item.key);
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = '<span class="box" style="background:'+c+'"></span><span>'+item.name+'</span>';
+        itemsEl.appendChild(div);
+      });
+    }
+
+
+    function getSelectedTypeKey(){
+      return document.getElementById("tipoSel").value;
+    }
+
+    function getSelectedTypeLabel(){
+      const k = getSelectedTypeKey();
+      if (k === "__all__") return "Todas";
+      const src = CSV_SOURCES.find(s => s.key === k);
+      return src ? src.label : k;
+    }
+
+    function getActiveAgg(){
+      const tipo = getSelectedTypeKey();
+      if (tipo === "__all__") return yearCacheAll;
+      return yearCachePerType[tipo] || {};
+    }
+
+    // =========================
+    // VISIBILIDADE DE BAIRROS
+    // =========================
+    function bairroVisivel(key){
+      const distSel = distritoSelEl.value;
+      const bairroSel = bairroSelEl.value;
+      const meta = bairrosMeta[key];
+
+      if (distSel && distSel !== "__all__"){
+        if (!meta || meta.distKey !== distSel) return false;
+      }
+      if (bairroSel && bairroSel !== "__all__"){
+        if (key !== bairroSel) return false;
+      }
+      return true;
+    }
+
+    function updateDistrictVisibility(){
+      for (const [key, group] of Object.entries(districtLayers)){
+        if (bairroVisivel(key)){
+          if (!map.hasLayer(group)) group.addTo(map);
+        } else {
+          if (map.hasLayer(group)) map.removeLayer(group);
+        }
+      }
+      fitAllVisible();
+    }
+
+    // =========================
+    // POLÍGONOS (AGREGADO)
+    // =========================
+    function applyFilters(){
+      const anoSel = document.getElementById("anoSel");
+      currentYear = parseInt(anoSel.value,10);
+      const aggAll = getActiveAgg()[currentYear] || { byRegion:{}, min:0, max:0 };
+      let totalAno = 0;
+
+      for (const [key, group] of Object.entries(districtLayers)){
+        if (!map.hasLayer(group)) continue;
+        const info = aggAll.byRegion[key];
+        const value = info ? info.total : 0;
+        totalAno += value;
+
+        let opacity = 0.2;
+        if (aggAll.max > aggAll.min && Number.isFinite(value)){
+          const frac = (value - aggAll.min) / (aggAll.max - aggAll.min);
+          opacity = 0.15 + frac * (0.9 - 0.15);
+        } else if (aggAll.max === aggAll.min && aggAll.max > 0){
+          opacity = 0.9;
+        }
+        applyStyle(group, colorForRegion(key), opacity);
+      }
+
+      document.getElementById("sumTotal").textContent = totalAno.toLocaleString("pt-BR");
+      refreshFixedPopup();
+      updateMarkers();
+      buildColorLegend();
+    }
+
+    // =========================
+    // POPUPS DE BAIRROS
+    // =========================
+    function buildPopupHtmlForRegion(key){
+      const name = districtNameByKey[key] || (bairrosMeta[key] && bairrosMeta[key].name) || key;
+      const aggYears = getActiveAgg();
+      const yearObj = aggYears[currentYear] || { byRegion:{} };
+      const info = yearObj.byRegion[key];
+
+      const total = info ? info.total : 0;
+      const byType = info ? info.byType : {};
+      const rows = Object.entries(byType).sort((a,b)=>b[1]-a[1]);
+
+      const table = rows.length
+        ? '<table class="minimal"><thead><tr><th>Tipo</th><th>Ocorrências</th></tr></thead><tbody>'
+          + rows.map(([label,val]) => '<tr><td>'+label+'</td><td>'+val+'</td></tr>').join("")
+          + '</tbody></table>'
+        : '<i>Sem detalhamento por tipo</i>';
+
+      const tipoLabel = getSelectedTypeLabel();
+
+      return [
+        '<b>'+name+'</b>',
+        '<div><b>Ano:</b> '+currentYear+'</div>',
+        '<div><b>Tipo selecionado:</b> '+tipoLabel+'</div>',
+        '<div><b>Total no ano:</b> '+total.toLocaleString("pt-BR")+'</div>',
+        '<div style="margin-top:6px;"><b>Por tipo:</b></div>',
+        table
+      ].join("");
+    }
+
+    function refreshFixedPopup(){
+      popupLayer.clearLayers();
+      const bairroSel = bairroSelEl.value;
+      if (!bairroSel || bairroSel === "__all__") return;
+      const group = districtLayers[bairroSel];
+      if (!group || !map.hasLayer(group)) return;
+
+      let center;
+      try { center = group.getBounds().getCenter(); }
+      catch(e){ center = map.getCenter(); }
+
+      const html = buildPopupHtmlForRegion(bairroSel);
+      const p = L.popup({ autoClose:false, closeOnClick:false, closeButton:false, className:"auto-popup" })
+                .setLatLng(center)
+                .setContent(html);
+      popupLayer.addLayer(p);
+    }
+
+    // =========================
+    // MARCADORES (PONTOS)
+    // =========================
+    function buildMarkerPopupHtml(p){
+      const partes = [];
+      partes.push('<b>'+p.typeLabel+'</b>');
+      partes.push('<div><b>Ano:</b> '+p.ano+'</div>');
+      if (p.mes) partes.push('<div><b>Mês:</b> '+p.mes+'</div>');
+      if (p.bairroRaw) partes.push('<div><b>Bairro:</b> '+p.bairroRaw+'</div>');
+      if (p.distrito) partes.push('<div><b>Distrito:</b> '+p.distrito+'</div>');
+      if (p.local) partes.push('<div><b>Local da ocorrência:</b> '+p.local+'</div>');
+      return partes.join("");
+    }
+
+    function updateMarkers(){
+      markersLayer.clearLayers();
+      const bairroSel = bairroSelEl.value;
+
+      if (!bairroSel || bairroSel === "__all__") return;
+
+      const tipo = getSelectedTypeKey();
+      const ano  = currentYear;
+      let pts = [];
+
+      if (tipo === "__all__"){
+        pts = pointsAll[ano] || [];
+      } else {
+        pts = (pointsPerType[tipo] && pointsPerType[tipo][ano]) || [];
+      }
+
+      pts.forEach(p => {
+        if (p.bairroKey !== bairroSel) return;
+        if (!Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return;
+        if (!pointInAnyPolygon(p.lat, p.lng, bairroSel)) return;
+
+        const marker = L.circleMarker([p.lat, p.lng], {
+          radius: 6,
+          color: "#ff0000",
+          fillColor: "#ff0000",
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 0.9
+        });
+
+        marker.bindPopup(buildMarkerPopupHtml(p));
+        markersLayer.addLayer(marker);
+      });
+
+      markersLayer.bringToFront();
+    }
+
+    // =========================
+    // TIMELINE
+    // =========================
+    const tl = document.getElementById("timeline");
+    const track = document.getElementById("track");
+    const handle = document.getElementById("handle");
+    const ticks = document.getElementById("ticks");
+
+    function buildTicks(){
+      ticks.innerHTML = YEARS.map(y => '<div class="year">'+y+'</div>').join("");
+    }
+
+    function syncHandleToYear(){
+      const idx = YEARS.indexOf(currentYear);
+      if (idx < 0 || YEARS.length === 1){
+        handle.style.left = "0%";
+        return;
+      }
+      const pct = (idx / (YEARS.length - 1)) * 100;
+      handle.style.left = pct + "%";
+    }
+
+    function yearFromPosition(px){
+      const rect = track.getBoundingClientRect();
+      const clamped = Math.max(rect.left, Math.min(px, rect.right));
+      const frac = (clamped - rect.left) / rect.width;
+      const idx = Math.round(frac * (YEARS.length - 1));
+      return YEARS[idx];
+    }
+
+    function setYearFromPx(px){
+      const y = yearFromPosition(px);
+      if (y !== currentYear){
+        currentYear = y;
+        document.getElementById("anoSel").value = String(y);
+        syncHandleToYear();
+        applyFilters();
+      } else {
+        syncHandleToYear();
+      }
+    }
+
+    function initTimelineDrag(){
+      let dragging = false;
+
+      const onDown = (e) => {
+        dragging = true;
+        document.body.style.userSelect = "none";
+        const clientX = e.clientX ?? (e.touches && e.touches[0].clientX);
+        setYearFromPx(clientX);
+      };
+
+      const onMove = (e) => {
+        if (!dragging) return;
+        const clientX = e.clientX ?? (e.touches && e.touches[0].clientX);
+        setYearFromPx(clientX);
+      };
+
+      const onUp = () => {
+        dragging = false;
+        document.body.style.userSelect = "";
+      };
+
+      handle.addEventListener("mousedown", onDown);
+      handle.addEventListener("touchstart", onDown, { passive:true });
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("touchmove", onMove, { passive:true });
+      window.addEventListener("mouseup", onUp);
+      window.addEventListener("touchend", onUp);
+
+      track.addEventListener("mousedown", (e) => setYearFromPx(e.clientX));
+      track.addEventListener("touchstart", (e) => setYearFromPx(e.touches[0].clientX), { passive:true });
+    }
+
+    function toggleTimelineAccordingToBairro(){
+      const bairroSel = bairroSelEl.value;
+      const enable = bairroSel && bairroSel !== "__all__";
+      tl.style.display = enable ? "block" : "none";
+      if (!enable) popupLayer.clearLayers();
+      if (enable) refreshFixedPopup();
+    }
+
+    // =========================
+    // INICIALIZAÇÃO
+    // =========================
+    (async function init(){
+      try{
+        setBusy(true);
+        await preloadCsvs();
+        await loadAllKmls();
+        markersLayer.addTo(map);
+        buildYearSelect();
+        buildDistritoSelect();
+        buildBairroSelect();
+        buildTicks();
+        syncHandleToYear();
+        updateDistrictVisibility();
+        applyFilters();
+        fitAllVisible();
+        initTimelineDrag();
+        buildColorLegend();
+
+        document.getElementById("tipoSel").addEventListener("change", () => {
+          applyFilters();
+        });
+
+        document.getElementById("anoSel").addEventListener("change", () => {
+          currentYear = parseInt(document.getElementById("anoSel").value,10);
+          syncHandleToYear();
+          applyFilters();
+        });
+
+        distritoSelEl.addEventListener("change", () => {
+          buildBairroSelect();
+          updateDistrictVisibility();
+          applyFilters();
+          toggleTimelineAccordingToBairro();
+        });
+
+        bairroSelEl.addEventListener("change", () => {
+          updateDistrictVisibility();
+          applyFilters();
+          toggleTimelineAccordingToBairro();
+        });
+
+        document.getElementById("btnReset").addEventListener("click", () => {
+          document.getElementById("tipoSel").value = "__all__";
+          distritoSelEl.value = "__all__";
+          buildBairroSelect();
+          bairroSelEl.value = "__all__";
+          currentYear = YEARS[YEARS.length - 1];
+          document.getElementById("anoSel").value = String(currentYear);
+          syncHandleToYear();
+          popupLayer.clearLayers();
+          updateDistrictVisibility();
+          applyFilters();
+          toggleTimelineAccordingToBairro();
+        });
+
+        toggleTimelineAccordingToBairro();
+      } finally {
+        setBusy(false);
+      }
+    })();
+  </script>
+</body>
+</html>
