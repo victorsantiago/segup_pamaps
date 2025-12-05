@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Segurança Púbica - Ocorrências por Distrito/Bairros</title>
+  <title>Mapa – Ocorrências por Região</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -31,13 +31,43 @@
     .legend .row { display:flex; align-items:center; margin:4px 0; gap:8px; }
     .legend .dot { width:14px; height:14px; border-radius:4px; background:#1976d2; }
 
-    .color-legend { bottom: 120px; max-width:320px; }
+    .color-legend {
+      bottom: 120px;
+      max-width:320px;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+    }
     .color-legend h4 { margin:0 0 6px; }
-    .color-legend .items { display:flex; flex-wrap:wrap; gap:4px 12px; max-height:400px; overflow-y:auto; }
+    .color-legend .items { display:flex; flex-wrap:wrap; gap:4px 12px; max-height:370px; overflow-y:auto; }
     .color-legend .item { display:flex; align-items:center; gap:8px; margin:2px 0; }
     .color-legend .box { width:14px; height:14px; border-radius:3px; }
     /* duas colunas quando for "Todos os bairros" */
     .color-legend.two-cols .item { width:48%; }
+
+    /* Barra/botão lateral para minimizar legenda */
+    .legend-toggle {
+      position:absolute;
+      left:-18px;
+      top:40px;
+      width:18px;
+      height:40px;
+      background:#d32f2f; /* barra vermelha */
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:6px 0 0 6px;
+      cursor:pointer;
+      font-weight:bold;
+      z-index:999;
+      user-select:none;
+    }
+    .color-legend.minimized {
+      transform:translateX(220px);
+      opacity:0.3;
+    }
+    .color-legend.minimized .items {
+      pointer-events:none;
+    }
 
     .title-block {
       display: flex;
@@ -150,6 +180,7 @@
   </div>
 
   <div class="color-legend" id="colorLegend">
+    <div id="legendToggle" class="legend-toggle">❮</div>
     <h4>Bairros</h4>
     <div class="items" id="colorLegendItems"></div>
   </div>
@@ -552,14 +583,14 @@
     }
 
     function buildColorLegend(){
-      const legend  = document.getElementById("colorLegend");
+      const legend = document.getElementById("colorLegend");
       const itemsEl = document.getElementById("colorLegendItems");
       itemsEl.innerHTML = "";
 
       const bairroSel = bairroSelEl.value;
       const distFilter = distritoSelEl.value;
 
-      // Caso 1: há um bairro específico selecionado → mostra só ele
+      // Caso 1: bairro específico → só ele
       if (bairroSel && bairroSel !== "__all__" && bairrosMeta[bairroSel]) {
         legend.classList.remove("two-cols");
         const meta = bairrosMeta[bairroSel];
@@ -571,18 +602,15 @@
         return;
       }
 
-      // Caso 2: "Todos" os bairros, mas com possível filtro de distrito
+      // Caso 2: Todos os bairros, mas filtrando por distrito (se houver)
       legend.classList.add("two-cols");
-
       const list = Object.entries(bairrosMeta)
         .filter(([key, meta]) => {
-          // se não houver distrito selecionado, entram todos
           if (!distFilter || distFilter === "__all__") return true;
-          // senão, apenas bairros do distrito escolhido
           return meta.distKey === distFilter;
         })
-        .map(([key, val]) => ({ key, name: val.name }))
-        .sort((a,b) => a.name.localeCompare(b.name, "pt-BR"));
+        .map(([key,val]) => ({ key, name: val.name }))
+        .sort((a,b) => a.name.localeCompare(b.name,"pt-BR"));
 
       list.forEach(item => {
         const c = colorForRegion(item.key);
@@ -592,7 +620,6 @@
         itemsEl.appendChild(div);
       });
     }
-
 
     function getSelectedTypeKey(){
       return document.getElementById("tipoSel").value;
@@ -853,6 +880,24 @@
     }
 
     // =========================
+    // TOGGLE DA LEGENDA
+    // =========================
+    const legendEl = document.getElementById("colorLegend");
+    const toggleEl = document.getElementById("legendToggle");
+    let legendOpen = true;
+
+    toggleEl.addEventListener("click", () => {
+      legendOpen = !legendOpen;
+      if (legendOpen) {
+        legendEl.classList.remove("minimized");
+        toggleEl.textContent = "❯";
+      } else {
+        legendEl.classList.add("minimized");
+        toggleEl.textContent = "❮";
+      }
+    });
+
+    // =========================
     // INICIALIZAÇÃO
     // =========================
     (async function init(){
@@ -870,7 +915,6 @@
         applyFilters();
         fitAllVisible();
         initTimelineDrag();
-        buildColorLegend();
 
         document.getElementById("tipoSel").addEventListener("change", () => {
           applyFilters();
