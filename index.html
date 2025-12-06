@@ -11,102 +11,272 @@
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
 
   <style>
-    :root{ --bg:#ffffff; --panel:#f5f7fb; --text:#0b1020; --muted:#5b6b82; --border:#e9eef7; }
-    html, body { height: 100%; margin: 0; background: var(--bg); color: var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial; }
-    .app { display:grid; grid-template-rows:auto 1fr auto; height:100%; }
-
-    header { display:flex; flex-wrap:wrap; gap:16px; align-items:center; padding:12px 16px;
-      background:var(--panel); box-shadow:0 2px 12px rgba(0,0,0,.08); position:sticky; top:0; z-index:1000; }
-    header h1 { font-size:18px; margin:0; letter-spacing:.2px; }
-    .controls { display:flex; flex-wrap:wrap; gap:10px; align-items:center; font-size:14px; color:var(--muted); }
-    .badge { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; background:#eef2f9; }
-    .select { padding:6px 10px; border:1px solid #dbe3f0; border-radius:8px; background:#fff; color:#0b1020; }
-
-    #map { height: 100%; }
-
-    .legend, .color-legend { position:absolute; right:10px; background:rgba(255,255,255,0.98); color:#111827;
-      padding:10px 12px; border-radius:10px; font:12px system-ui; z-index:500; border:1px solid var(--border); }
-    .legend { bottom: 20px; }
-    .legend .row { display:flex; align-items:center; margin:4px 0; gap:8px; }
-    .legend .dot { width:14px; height:14px; border-radius:4px; background:#1976d2; }
-
-    .color-legend {
-      bottom: 120px;
-      max-width:320px;
-      transition: transform 0.25s ease, opacity 0.25s ease;
+    :root{
+      --bg:#ffffff;
+      --panel:#f5f7fb;
+      --text:#0b1020;
+      --muted:#5b6b82;
+      --border:#e9eef7;
     }
-    .color-legend h4 { margin:0 0 6px; }
-    .color-legend .items { display:flex; flex-wrap:wrap; gap:4px 12px; max-height:370px; overflow-y:auto; }
-    .color-legend .item { display:flex; align-items:center; gap:8px; margin:2px 0; }
-    .color-legend .box { width:14px; height:14px; border-radius:3px; }
-    /* duas colunas quando for "Todos os bairros" */
-    .color-legend.two-cols .item { width:48%; }
 
-    /* Barra/botão lateral para minimizar legenda */
-    .legend-toggle {
-      position:absolute;
-      left:-18px;
-      top:40px;
-      width:18px;
-      height:40px;
-      background:#d32f2f; /* barra vermelha */
-      color:#fff;
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial;
+      overflow-x:hidden;
+    }
+
+    .app {
+      display:grid;
+      grid-template-rows:auto 1fr auto;
+      height:100%;
+    }
+
+    header {
       display:flex;
+      flex-wrap:wrap;
+      gap:16px;
       align-items:center;
-      justify-content:center;
-      border-radius:6px 0 0 6px;
-      cursor:pointer;
-      font-weight:bold;
-      z-index:999;
-      user-select:none;
-    }
-    .color-legend.minimized {
-      transform:translateX(220px);
-      opacity:0.3;
-    }
-    .color-legend.minimized .items {
-      pointer-events:none;
+      padding:12px 16px;
+      background:var(--panel);
+      box-shadow:0 2px 12px rgba(0,0,0,.08);
+      position:sticky;
+      top:0;
+      z-index:1000;
     }
 
     .title-block {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
     }
 
     .title-block h1 {
-      margin: 0;
+      margin:0;
+      font-size:18px;
+      letter-spacing:.2px;
     }
 
     .title-block .fonte {
-      font-size: 12px;
-      margin-top: 2px;
-      color: #4b5563; /* cinza suave */
+      font-size:12px;
+      margin-top:2px;
+      color:#4b5563;
     }
 
-    .timeline { position: fixed; left: 20px; right: 20px; bottom: 16px; z-index: 1000; display: none;
-      padding: 10px 16px; background: transparent; border-top: 1px solid rgba(0,0,0,0.2); }
-    .timeline .label { margin: 0 0 8px 2px; color: #1976d2; font: 700 13px system-ui;
-      text-shadow: 0 1px 2px rgba(255,255,255,0.6); }
-    .timeline .track { position: relative; height: 8px; background: #1976d2; border-radius: 999px;
-      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.8); }
-    .timeline .handle { position: absolute; top: 50%; transform: translate(-50%, -50%);
-      width: 20px; height: 20px; border-radius: 50%; background: #0d47a1;
-      border: 2px solid #bbdefb; box-shadow: 0 2px 8px rgba(0,0,0,0.35); cursor: grab; }
-    .timeline .ticks { display:flex; justify-content: space-between; margin-top: 6px;
-      color: #1976d2; font: 700 12px/1 system-ui;
-      text-shadow: 0 1px 2px rgba(255,255,255,0.6); }
-    .timeline .year { user-select: none; }
+    .controls {
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      font-size:14px;
+      color:var(--muted);
+    }
 
-    .kml-busy { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-      background:rgba(0,0,0,0.75); color:#fff; padding:8px 12px; border-radius:8px; display:none; z-index:700; }
+    .badge {
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:#eef2f9;
+    }
 
-    .leaflet-popup-content-wrapper { border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.15); }
-    .leaflet-popup-content { margin: 12px 16px; }
+    .select {
+      padding:6px 10px;
+      border:1px solid #dbe3f0;
+      border-radius:8px;
+      background:#fff;
+      color:#0b1020;
+    }
 
-    table.minimal { border-collapse: collapse; width: 100%; font-size: 12px; }
-    table.minimal td, table.minimal th { border-bottom: 1px solid #eee; padding: 4px 6px; text-align: left; }
+    #map { height:100%; }
+
+    .legend {
+      position:absolute;
+      background:rgba(255,255,255,0.98);
+      color:#111827;
+      padding:2px 12px;
+      border-radius:10px;
+      font:12px system-ui;
+      z-index:500;
+      border:1px solid var(--border);
+      bottom:60px;
+      right:10px;
+    }
+
+    .legend .row { display:flex; align-items:center; gap:8px; margin:4px 0; }
+    .legend .dot { width:14px; height:14px; border-radius:4px; background:#1976d2; }
+
+    /* NOVA LEGENDA RECOLHÍVEL */
+    .color-legend {
+      position:absolute;
+      bottom:145px;
+      right:10px;
+      width:320px;
+      max-height:350px;
+      background:rgba(255,255,255,0.98);
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:6px 12px 10px 12px;
+      box-shadow:0 4px 14px rgba(0,0,0,0.15);
+      overflow:hidden;
+      transition:max-height 0.25s ease-in-out, padding 0.25s ease-in-out;
+      z-index:600;
+    }
+
+    .color-legend.collapsed {
+      max-height:32px;
+      padding-top:4px;
+      padding-bottom:4px;
+    }
+
+    .color-legend-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      cursor:pointer;
+      font-size:14px;
+      font-weight:600;
+      user-select:none;
+    }
+
+    .color-legend-header button {
+      background:none;
+      border:none;
+      font-size:18px;
+      cursor:pointer;
+      padding:0;
+      line-height:1;
+    }
+
+    .color-legend .items {
+      margin-top:8px;
+      max-height:280px;
+      overflow-y:auto;
+      display:flex;
+      flex-wrap:wrap;
+      gap:4px 12px;
+      font-size: 11px;
+    }
+
+    .color-legend.collapsed .items {
+      display:none;
+    }
+
+    .color-legend .item {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin:2px 0;
+    }
+
+    .color-legend .box {
+      width:14px;
+      height:14px;
+      border-radius:3px;
+    }
+
+    .color-legend.two-cols .item { width:48%; }
+
+    .timeline {
+      position:fixed;
+      left:20px;
+      right:20px;
+      bottom:16px;
+      z-index:1000;
+      padding:10px 16px;
+      background:transparent;
+    }
+
+    .timeline .label {
+      margin:0 0 8px 2px;
+      color:#1976d2;
+      font:700 13px system-ui;
+      text-shadow:0 1px 2px rgba(255,255,255,0.6);
+    }
+
+    .timeline .track {
+      position:relative;
+      height:8px;
+      background:#1976d2;
+      border-radius:999px;
+      box-shadow:inset 0 0 0 2px rgba(255,255,255,0.8);
+    }
+
+    .timeline .handle {
+      position:absolute;
+      top:50%;
+      transform:translate(-50%, -50%);
+      width:20px;
+      height:20px;
+      border-radius:50%;
+      background:#0d47a1;
+      border:2px solid #bbdefb;
+      box-shadow:0 2px 8px rgba(0,0,0,0.35);
+      cursor:grab;
+    }
+
+    .timeline .ticks {
+      display:flex;
+      justify-content:space-between;
+      margin-top:6px;
+      color:#1976d2;
+      font:700 12px/1 system-ui;
+      text-shadow:0 1px 2px rgba(255,255,255,0.6);
+    }
+
+    .timeline .year { user-select:none; }
+
+    .kml-busy {
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      background:rgba(0,0,0,0.75);
+      color:#fff;
+      padding:8px 12px;
+      border-radius:8px;
+      display:none;
+      z-index:700;
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius:14px;
+      box-shadow:0 10px 30px rgba(0,0,0,.15);
+    }
+
+    .leaflet-popup-content {
+      margin:12px 16px;
+    }
+
+    table.minimal {
+      border-collapse:collapse;
+      width:100%;
+      font-size:12px;
+    }
+
+    table.minimal th,
+    table.minimal td {
+      border-bottom:1px solid #eee;
+      padding:4px 6px;
+      text-align:left;
+    }
+
+    .region-pill-wrapper { pointer-events:none; }
+
+    .region-pill {
+      background:#ffffff;
+      border-radius:999px;
+      padding:2px 8px;
+      font-size:11px;
+      font-weight:600;
+      color:#111827;
+      border:1px solid rgba(15,23,42,0.08);
+      box-shadow:0 1px 4px rgba(15,23,42,0.35);
+      white-space:nowrap;
+    }
   </style>
 </head>
 
@@ -121,16 +291,18 @@
         <label class="badge">Tipo:
           <select id="tipoSel" class="select">
             <option value="__all__">Todas</option>
-            <option value="ameaca">Ameaça</option>
-            <option value="consumo_de_drogas">Consumo de Drogas</option>
-            <option value="estupro">Estupro</option>
+            <option value="estupro_com_resultado_morte">Estupro com resultado morte</option>
+            <option value="estupro_de_vulneravel_com_resultado_morte">Estupro de vulnerável com resultado morte</option>
             <option value="estupro_de_vulneravel">Estupro de vulnerável</option>
+            <option value="estupro">Estupro</option>
+            <option value="extorsao_mediante_sequestro_com_resultado_morte">Extorsão mediante sequestro com resultado morte</option>
+            <option value="feminicidio">Feminicídio</option>
             <option value="furto">Furto</option>
-            <option value="homicidio">Homicídio</option>
             <option value="homicidio_culposo_no_transito">Homicídio culposo no trânsito</option>
+            <option value="homicidio">Homicídio</option>
             <option value="latrocinio">Latrocínio</option>
-            <option value="lesao_corporal">Lesão corporal</option>
             <option value="lesao_corporal_seguida_de_morte">Lesão corporal seguida de morte</option>
+            <option value="lesao_corporal">Lesão corporal</option>
             <option value="maus_tratos_com_resultado_morte">Maus-tratos com resultado morte</option>
             <option value="morte_no_transito">Morte no trânsito</option>
             <option value="roubo">Roubo</option>
@@ -155,6 +327,12 @@
         </label>
 
         <span class="badge"><strong id="sumTotal">—</strong> total no ano</span>
+
+        <label class="badge">
+          <input type="checkbox" id="pillToggle" checked style="margin:0;">
+          Mostrar contagem por bairro
+        </label>
+
         <button id="btnReset" class="badge" style="cursor:pointer;">Limpar</button>
       </div>
     </header>
@@ -179,42 +357,43 @@
     <div class="row"><span class="dot" style="opacity:0.9"></span> Alta</div>
   </div>
 
+  <!-- NOVA LEGENDA RECOLHÍVEL -->
   <div class="color-legend" id="colorLegend">
-    <div id="legendToggle" class="legend-toggle">❮</div>
-    <h4>Bairros</h4>
+    <div class="color-legend-header" id="legendHeader">
+      <span>Bairros</span>
+      <button id="legendBtn">▼</button>
+    </div>
     <div class="items" id="colorLegendItems"></div>
   </div>
 
   <script>
-    // =========================
-    // CONFIG
-    // =========================
     const CSV_DIR = "data/";
     const KML_DIR = "kml_poligonos/";
 
     const CSV_SOURCES = [
-      { key: "ameaca",                        path: CSV_DIR + "ameaca.csv",                        label: "Ameaça" },
-      { key: "consumo_de_drogas",             path: CSV_DIR + "consumo_de_drogas.csv",             label: "Consumo de drogas" },
-      { key: "estupro",                       path: CSV_DIR + "estupro.csv",                       label: "Estupro" },
-      { key: "estupro_de_vulneravel",         path: CSV_DIR + "estupro_de_vulneravel.csv",         label: "Estupro de vulnerável" },
-      { key: "furto",                         path: CSV_DIR + "furto.csv",                         label: "Furto" },
-      { key: "homicidio",                     path: CSV_DIR + "homicidio.csv",                     label: "Homicídio" },
-      { key: "homicidio_culposo_no_transito", path: CSV_DIR + "homicidio_culposo_no_transito.csv", label: "Homicídio culposo no trânsito" },
-      { key: "latrocinio",                    path: CSV_DIR + "latrocinio.csv",                    label: "Latrocínio" },
-      { key: "lesao_corporal",                path: CSV_DIR + "lesao_corporal.csv",                label: "Lesão corporal" },
-      { key: "lesao_corporal_seguida_de_morte", path: CSV_DIR + "lesao_corporal_seguida_de_morte.csv", label: "Lesão corporal seguida de morte" },
-      { key: "maus_tratos_com_resultado_morte", path: CSV_DIR + "maus_tratos_com_resultado_morte.csv", label: "Maus-tratos com resultado morte" },
-      { key: "morte_no_transito",             path: CSV_DIR + "morte_no_transito.csv",             label: "Morte no trânsito" },
-      { key: "roubo",                         path: CSV_DIR + "roubo.csv",                         label: "Roubo" },
-      { key: "trafico_de_drogas",             path: CSV_DIR + "trafico_de_drogas.csv",             label: "Tráfico de drogas" }
+      { key: "estupro_com_resultado_morte",                 path: CSV_DIR + "estupro_com_resultado_morte.csv",                 label: "Estupro com resultado morte" },
+      { key: "estupro_de_vulneravel_com_resultado_morte",   path: CSV_DIR + "estupro_de_vulneravel_com_resultado_morte.csv",   label: "Estupro de vulnerável com resultado morte" },
+      { key: "estupro_de_vulneravel",                       path: CSV_DIR + "estupro_de_vulneravel.csv",                       label: "Estupro de vulnerável" },
+      { key: "estupro",                                     path: CSV_DIR + "estupro.csv",                                     label: "Estupro" },
+      { key: "extorsao_mediante_sequestro_com_resultado_morte", path: CSV_DIR + "extorsao_mediante_sequestro_com_resultado_morte.csv", label: "Extorsão mediante sequestro com resultado morte" },
+      { key: "feminicidio",                                 path: CSV_DIR + "feminicidio.csv",                                 label: "Feminicídio" },
+      { key: "furto",                                       path: CSV_DIR + "furto.csv",                                       label: "Furto" },
+      { key: "homicidio_culposo_no_transito",               path: CSV_DIR + "homicidio_culposo_no_transito.csv",               label: "Homicídio culposo no trânsito" },
+      { key: "homicidio",                                   path: CSV_DIR + "homicidio.csv",                                   label: "Homicídio" },
+      { key: "latrocinio",                                  path: CSV_DIR + "latrocinio.csv",                                  label: "Latrocínio" },
+      { key: "lesao_corporal_seguida_de_morte",             path: CSV_DIR + "lesao_corporal_seguida_de_morte.csv",             label: "Lesão corporal seguida de morte" },
+      { key: "lesao_corporal",                              path: CSV_DIR + "lesao_corporal.csv",                              label: "Lesão corporal" },
+      { key: "maus_tratos_com_resultado_morte",             path: CSV_DIR + "maus_tratos_com_resultado_morte.csv",             label: "Maus-tratos com resultado morte" },
+      { key: "morte_no_transito",                           path: CSV_DIR + "morte_no_transito.csv",                           label: "Morte no trânsito" },
+      { key: "roubo",                                       path: CSV_DIR + "roubo.csv",                                       label: "Roubo" },
+      { key: "trafico_de_drogas",                           path: CSV_DIR + "trafico_de_drogas.csv",                           label: "Tráfico de drogas" }
     ];
 
     const COLOR_PALETTE = [
       "#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b",
       "#e377c2","#7f7f7f","#bcbd22","#17becf"
     ];
-    const COLOR_MAP = {}; // bairroKey -> cor
-
+    const COLOR_MAP = {};
     function colorForRegion(key){
       if (!COLOR_MAP[key]) {
         const idx = Object.keys(COLOR_MAP).length % COLOR_PALETTE.length;
@@ -261,35 +440,28 @@
       document.getElementById("busy").style.display = on ? "block" : "none";
     }
 
-    // =========================
-    // MAPA
-    // =========================
     const map = L.map('map').setView([-1.4558, -48.4902], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
-    const districtLayers = {};      // bairroKey -> LayerGroup (polígono)
-    const districtNameByKey = {};   // bairroKey -> nome do bairro
+    const districtLayers = {};
+    const districtNameByKey = {};
     const popupLayer = L.layerGroup().addTo(map);
-    const markersLayer = L.layerGroup(); // será adicionado depois dos KMLs
-
-    // cache de polígonos: bairroKey -> [ [ [lat,lng], ... ] , ... ]
+    const markersLayer = L.layerGroup().addTo(map);
+    const labelsLayer  = L.layerGroup().addTo(map);
     const polygonCache = {};
 
-    // =========================
-    // DADOS
-    // =========================
-    const yearCachePerType = {};  // tipo -> ano -> {byRegion:{}, min,max}
-    const yearCacheAll = {};      // ano -> {byRegion:{}, min,max}
+    const yearCachePerType = {};
+    const yearCacheAll = {};
 
-    const bairrosMeta = {};       // bairroKey -> { name, distKey, distritoNome }
-    const distritoMeta = {};      // distKey -> { name }
-    const bairroToDist = {};      // bairroKey -> distKey
+    const bairrosMeta = {};
+    const distritoMeta = {};
+    const bairroToDist = {};
 
-    const pointsPerType = {};     // tipo -> ano -> [pontos]
-    const pointsAll = {};         // ano -> [pontos]
+    const pointsPerType = {};
+    const pointsAll = {};
 
     let YEARS = [];
     let currentYear = null;
@@ -386,7 +558,6 @@
         }
       }
 
-      // ALL (somando tipos)
       for (const src of CSV_SOURCES){
         const perType = yearCachePerType[src.key];
         for (const [ano, obj] of Object.entries(perType)){
@@ -416,9 +587,6 @@
       currentYear = YEARS[YEARS.length - 1];
     }
 
-    // =========================
-    // AUX: flatten + point-in-polygon
-    // =========================
     function flattenLatLngs(latlngs){
       if (!Array.isArray(latlngs)) return [];
       if (latlngs.length === 0) return [];
@@ -447,16 +615,13 @@
 
     function pointInAnyPolygon(lat, lng, bairroKey){
       const polys = polygonCache[bairroKey];
-      if (!polys || !polys.length) return true; // se não tiver polígono, não filtra
+      if (!polys || !polys.length) return true;
       for (const poly of polys){
         if (pointInPolygon(lat, lng, poly)) return true;
       }
       return false;
     }
 
-    // =========================
-    // KMLs (um por bairro)
-    // =========================
     async function loadAllKmls(){
       const keys = Object.keys(bairrosMeta);
       for (const key of keys){
@@ -484,6 +649,8 @@
 
             group.eachLayer(function(lyr){
               lyr.on("click", (e) => {
+                // fecha o popup fixo antes de abrir o novo
+                popupLayer.clearLayers();
                 const html = buildPopupHtmlForRegion(key);
                 const latlng = e.latlng || (lyr.getBounds ? lyr.getBounds().getCenter() : map.getCenter());
                 L.popup()
@@ -530,11 +697,9 @@
       } catch(e){}
     }
 
-    // =========================
-    // UI SELECTS / LEGEND
-    // =========================
     const distritoSelEl = document.getElementById("distritoSel");
     const bairroSelEl = document.getElementById("bairroSel");
+    const pillToggle = document.getElementById("pillToggle");
 
     function buildYearSelect(){
       const sel = document.getElementById("anoSel");
@@ -590,7 +755,6 @@
       const bairroSel = bairroSelEl.value;
       const distFilter = distritoSelEl.value;
 
-      // Caso 1: bairro específico → só ele
       if (bairroSel && bairroSel !== "__all__" && bairrosMeta[bairroSel]) {
         legend.classList.remove("two-cols");
         const meta = bairrosMeta[bairroSel];
@@ -602,7 +766,6 @@
         return;
       }
 
-      // Caso 2: Todos os bairros, mas filtrando por distrito (se houver)
       legend.classList.add("two-cols");
       const list = Object.entries(bairrosMeta)
         .filter(([key, meta]) => {
@@ -624,54 +787,45 @@
     function getSelectedTypeKey(){
       return document.getElementById("tipoSel").value;
     }
-
     function getSelectedTypeLabel(){
       const k = getSelectedTypeKey();
       if (k === "__all__") return "Todas";
       const src = CSV_SOURCES.find(s => s.key === k);
       return src ? src.label : k;
     }
-
     function getActiveAgg(){
       const tipo = getSelectedTypeKey();
       if (tipo === "__all__") return yearCacheAll;
       return yearCachePerType[tipo] || {};
     }
 
-    // =========================
-    // VISIBILIDADE DE BAIRROS
-    // =========================
-    function bairroVisivel(key){
-      const distSel = distritoSelEl.value;
+    function updateDistrictVisibility() {
       const bairroSel = bairroSelEl.value;
-      const meta = bairrosMeta[key];
+      const distSel = distritoSelEl.value;
 
-      if (distSel && distSel !== "__all__"){
-        if (!meta || meta.distKey !== distSel) return false;
-      }
-      if (bairroSel && bairroSel !== "__all__"){
-        if (key !== bairroSel) return false;
-      }
-      return true;
-    }
+      for (const [key, group] of Object.entries(districtLayers)) {
+        const meta = bairrosMeta[key];
 
-    function updateDistrictVisibility(){
-      for (const [key, group] of Object.entries(districtLayers)){
-        if (bairroVisivel(key)){
-          if (!map.hasLayer(group)) group.addTo(map);
-        } else {
+        if (bairroSel && bairroSel !== "__all__") {
+          if (key === bairroSel) {
+            if (!map.hasLayer(group)) map.addLayer(group);
+          } else {
+            if (map.hasLayer(group)) map.removeLayer(group);
+          }
+          continue;
+        }
+
+        if (distSel !== "__all__" && meta.distKey !== distSel) {
           if (map.hasLayer(group)) map.removeLayer(group);
+        } else {
+          if (!map.hasLayer(group)) map.addLayer(group);
         }
       }
+
       fitAllVisible();
     }
 
-    // =========================
-    // POLÍGONOS (AGREGADO)
-    // =========================
     function applyFilters(){
-      const anoSel = document.getElementById("anoSel");
-      currentYear = parseInt(anoSel.value,10);
       const aggAll = getActiveAgg()[currentYear] || { byRegion:{}, min:0, max:0 };
       let totalAno = 0;
 
@@ -695,11 +849,9 @@
       refreshFixedPopup();
       updateMarkers();
       buildColorLegend();
+      syncHandleToYear();
     }
 
-    // =========================
-    // POPUPS DE BAIRROS
-    // =========================
     function buildPopupHtmlForRegion(key){
       const name = districtNameByKey[key] || (bairrosMeta[key] && bairrosMeta[key].name) || key;
       const aggYears = getActiveAgg();
@@ -746,9 +898,6 @@
       popupLayer.addLayer(p);
     }
 
-    // =========================
-    // MARCADORES (PONTOS)
-    // =========================
     function buildMarkerPopupHtml(p){
       const partes = [];
       partes.push('<b>'+p.typeLabel+'</b>');
@@ -797,10 +946,61 @@
       markersLayer.bringToFront();
     }
 
-    // =========================
-    // TIMELINE
-    // =========================
-    const tl = document.getElementById("timeline");
+    function updateRegionLabels(){
+      labelsLayer.clearLayers();
+
+      if (!pillToggle || !pillToggle.checked) return;
+
+      const bairroSel = bairroSelEl.value;
+      const agg = getActiveAgg()[currentYear] || { byRegion:{} };
+
+      if (bairroSel && bairroSel !== "__all__") {
+        return;
+      }
+
+      for (const [key, group] of Object.entries(districtLayers)){
+        if (!map.hasLayer(group)) continue;
+
+        const info = agg.byRegion[key];
+        const total = info ? info.total : 0;
+        if (!total || total <= 0) continue;
+
+        let center;
+        try { center = group.getBounds().getCenter(); }
+        catch(e){ continue; }
+
+        const html = '<div class="region-pill">'+total.toLocaleString("pt-BR")+'</div>';
+
+        const marker = L.marker(center, {
+          icon: L.divIcon({
+            html: html,
+            className: 'region-pill-wrapper',
+            iconSize: null
+          })
+        });
+
+        labelsLayer.addLayer(marker);
+      }
+    }
+
+    function updatePillToggleState() {
+      const bairro = bairroSelEl.value;
+
+      if (bairro === "__all__") {
+        pillToggle.disabled = false;
+      } else {
+        pillToggle.disabled = true;
+        pillToggle.checked = false;
+      }
+
+      updateRegionLabels();
+    }
+
+    function refreshAll(){
+      applyFilters();
+      updateRegionLabels();
+    }
+
     const track = document.getElementById("track");
     const handle = document.getElementById("handle");
     const ticks = document.getElementById("ticks");
@@ -829,14 +1029,15 @@
 
     function setYearFromPx(px){
       const y = yearFromPosition(px);
-      if (y !== currentYear){
-        currentYear = y;
-        document.getElementById("anoSel").value = String(y);
-        syncHandleToYear();
-        applyFilters();
-      } else {
-        syncHandleToYear();
+      currentYear = y;
+
+      const anoSelEl = document.getElementById("anoSel");
+      if (anoSelEl.value !== String(y)) {
+        anoSelEl.value = String(y);
       }
+
+      syncHandleToYear();
+      refreshAll();
     }
 
     function initTimelineDrag(){
@@ -871,72 +1072,63 @@
       track.addEventListener("touchstart", (e) => setYearFromPx(e.touches[0].clientX), { passive:true });
     }
 
-    function toggleTimelineAccordingToBairro(){
-      const bairroSel = bairroSelEl.value;
-      const enable = bairroSel && bairroSel !== "__all__";
-      tl.style.display = enable ? "block" : "none";
-      if (!enable) popupLayer.clearLayers();
-      if (enable) refreshFixedPopup();
+    // NOVA LÓGICA DE COLAPSAR LEGENDA
+    const legendEl = document.getElementById("colorLegend");
+    const legendBtn = document.getElementById("legendBtn");
+    const legendHeader = document.getElementById("legendHeader");
+
+    function toggleLegend() {
+      const collapsed = legendEl.classList.toggle("collapsed");
+      legendBtn.textContent = collapsed ? "▲" : "▼";
     }
 
-    // =========================
-    // TOGGLE DA LEGENDA
-    // =========================
-    const legendEl = document.getElementById("colorLegend");
-    const toggleEl = document.getElementById("legendToggle");
-    let legendOpen = true;
+    legendHeader.addEventListener("click", toggleLegend);
 
-    toggleEl.addEventListener("click", () => {
-      legendOpen = !legendOpen;
-      if (legendOpen) {
-        legendEl.classList.remove("minimized");
-        toggleEl.textContent = "❯";
-      } else {
-        legendEl.classList.add("minimized");
-        toggleEl.textContent = "❮";
-      }
-    });
-
-    // =========================
-    // INICIALIZAÇÃO
-    // =========================
     (async function init(){
       try{
         setBusy(true);
         await preloadCsvs();
         await loadAllKmls();
-        markersLayer.addTo(map);
         buildYearSelect();
         buildDistritoSelect();
         buildBairroSelect();
         buildTicks();
         syncHandleToYear();
         updateDistrictVisibility();
-        applyFilters();
+        refreshAll();
         fitAllVisible();
         initTimelineDrag();
+        updatePillToggleState();
 
         document.getElementById("tipoSel").addEventListener("change", () => {
-          applyFilters();
+          refreshAll();
         });
 
         document.getElementById("anoSel").addEventListener("change", () => {
-          currentYear = parseInt(document.getElementById("anoSel").value,10);
+          const val = document.getElementById("anoSel").value;
+          const y = parseInt(val,10);
+          if (!isNaN(y)) {
+            currentYear = y;
+          }
           syncHandleToYear();
-          applyFilters();
+          refreshAll();
         });
 
         distritoSelEl.addEventListener("change", () => {
           buildBairroSelect();
           updateDistrictVisibility();
-          applyFilters();
-          toggleTimelineAccordingToBairro();
+          updatePillToggleState();
+          refreshAll();
         });
 
         bairroSelEl.addEventListener("change", () => {
           updateDistrictVisibility();
-          applyFilters();
-          toggleTimelineAccordingToBairro();
+          updatePillToggleState();
+          refreshAll();
+        });
+
+        pillToggle.addEventListener("change", () => {
+          updateRegionLabels();
         });
 
         document.getElementById("btnReset").addEventListener("click", () => {
@@ -946,14 +1138,12 @@
           bairroSelEl.value = "__all__";
           currentYear = YEARS[YEARS.length - 1];
           document.getElementById("anoSel").value = String(currentYear);
-          syncHandleToYear();
           popupLayer.clearLayers();
           updateDistrictVisibility();
-          applyFilters();
-          toggleTimelineAccordingToBairro();
+          updatePillToggleState();
+          refreshAll();
         });
 
-        toggleTimelineAccordingToBairro();
       } finally {
         setBusy(false);
       }
