@@ -124,6 +124,8 @@
       overflow:hidden;
       transition:max-height 0.25s ease-in-out, padding 0.25s ease-in-out;
       z-index:600;
+      display:flex;
+      flex-direction:column;
     }
 
     .color-legend.collapsed {
@@ -153,7 +155,8 @@
 
     .color-legend .items {
       margin-top:8px;
-      max-height:280px;
+      flex:1;
+      max-height:none;
       overflow-y:auto;
       display:flex;
       flex-wrap:wrap;
@@ -277,6 +280,35 @@
       box-shadow:0 1px 4px rgba(15,23,42,0.35);
       white-space:nowrap;
     }
+  
+    /* CONVENÇÕES (CORES DOS PONTOS POR HORÁRIO) */
+    .color-legend .conv {
+      margin-top:8px;
+      padding-top:8px;
+      border-top:1px solid var(--border);
+      font-size:11px;
+    }
+    .color-legend .conv-title{
+      font-weight:700;
+      margin:0 0 6px;
+      color:#111827;
+    }
+    .color-legend .conv-items{
+      display:flex;
+      flex-wrap:wrap;
+      gap:4px 12px;
+    }
+    .color-legend .conv-item{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin:2px 0;
+      width:48%;
+    }
+    .color-legend.collapsed .conv{
+      display:none;
+    }
+
   </style>
 </head>
 
@@ -285,7 +317,7 @@
     <header>
       <div class="title-block">
         <h1>Segurança Pública no Pará (Ocorrências por Distrito/Bairro)</h1>
-        <span class="fonte">Fonte: SEGUP - Secretaria de Estado de Segurança Pública e Defesa Social (2019 - 10/2025).</span>
+        <span class="fonte">Fonte: SEGUP - Secretaria de Estado de Segurança Pública e Defesa Social (2020-10/2025).</span>
       </div>
       <div class="controls">
         <label class="badge">Tipo:
@@ -364,6 +396,7 @@
       <button id="legendBtn">▼</button>
     </div>
     <div class="items" id="colorLegendItems"></div>
+    <div class="conv" id="convLegend"></div>
   </div>
 
   <script>
@@ -434,6 +467,52 @@
       s = s.replace(/\s+/g,"");
       const n = parseFloat(s);
       return Number.isFinite(n) ? n : NaN;
+    }
+
+    function parseTimeToSeconds(hhmmss){
+      if (!hhmmss) return NaN;
+      const s = String(hhmmss).trim();
+      const m = s.match(/^([0-1]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/);
+      if (!m) return NaN;
+      const h  = parseInt(m[1], 10);
+      const mi = parseInt(m[2], 10);
+      const se = parseInt(m[3] || "0", 10);
+      return h * 3600 + mi * 60 + se;
+    }
+
+    function colorForHoraFato(hhmmss){
+      // Regras:
+      // amarelo:   00:01–06:00
+      // verde:     06:01–12:00
+      // laranja:   12:01–18:00
+      // vermelho:  18:01–00:00 (inclui 00:00)
+      const t = parseTimeToSeconds(hhmmss);
+      if (!Number.isFinite(t)) return "#ff0000"; // fallback: vermelho
+
+      const s00_00 = 0;
+      const s00_01 = 60;
+      const s06_00 = 6 * 3600;
+      const s06_01 = 6 * 3600 + 60;
+      const s12_00 = 12 * 3600;
+      const s12_01 = 12 * 3600 + 60;
+      const s18_00 = 18 * 3600;
+      const s18_01 = 18 * 3600 + 60;
+
+      if (t >= s00_01 && t <= s06_00) return "#ffeb3b";  // amarelo
+      if (t >= s06_01 && t <= s12_00) return "#8bc34a";  // verde claro
+      if (t >= s12_01 && t <= s18_00) return "#ff9800";  // laranja
+      // 18:01–23:59:59 e 00:00
+      if (t >= s18_01 || t === s00_00) return "#ff0000"; // vermelho
+      return "#ff0000";
+    }
+
+    function labelForHoraFato(hhmmss){
+      const t = parseTimeToSeconds(hhmmss);
+      if (!Number.isFinite(t)) return "—";
+      const h = String(Math.floor(t / 3600)).padStart(2, "0");
+      const m = String(Math.floor((t % 3600) / 60)).padStart(2, "0");
+      const s = String(t % 60).padStart(2, "0");
+      return `${h}:${m}:${s}`;
     }
 
     function setBusy(on){
@@ -541,6 +620,7 @@
               distrito: distritoRaw,
               mes: r.mes || "",
               local: r.local_ocorrencia || "",
+              horafato: r.horafato ?? r.HORA_FATO ?? r.HORAFATO ?? r.hora_fato ?? r.HoraFato ?? r.horaFato ?? "",
               typeKey: src.key,
               typeLabel: src.label
             };
@@ -747,6 +827,22 @@
       bairroSelEl.value = "__all__";
     }
 
+
+    function buildConventionLegend(){
+      const el = document.getElementById("convLegend");
+      if (!el) return;
+
+      el.innerHTML = [
+        '<div class="conv-title">Convenções</div>',
+        '<div class="conv-items">',
+          '<div class="conv-item"><span class="box" style="background:#ffeb3b"></span><span>00:01–06:00</span></div>',
+          '<div class="conv-item"><span class="box" style="background:#8bc34a"></span><span>06:01–12:00</span></div>',
+          '<div class="conv-item"><span class="box" style="background:#ff9800"></span><span>12:01–18:00</span></div>',
+          '<div class="conv-item"><span class="box" style="background:#ff0000"></span><span>18:01–00:00</span></div>',
+        '</div>'
+      ].join('');
+    }
+
     function buildColorLegend(){
       const legend = document.getElementById("colorLegend");
       const itemsEl = document.getElementById("colorLegendItems");
@@ -904,6 +1000,7 @@
       if (p.mes) partes.push('<div><b>Mês:</b> '+p.mes+'</div>');
       if (p.bairroRaw) partes.push('<div><b>Bairro:</b> '+p.bairroRaw+'</div>');
       if (p.distrito) partes.push('<div><b>Distrito:</b> '+p.distrito+'</div>');
+      if (p.horafato) partes.push('<div><b>Hora do fato:</b> '+labelForHoraFato(p.horafato)+'</div>');
       if (p.local) partes.push('<div><b>Local da ocorrência:</b> '+p.local+'</div>');
       return partes.join("");
     }
@@ -929,10 +1026,12 @@
         if (!Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return;
         if (!pointInAnyPolygon(p.lat, p.lng, bairroSel)) return;
 
+        const c = colorForHoraFato(p.horafato);
+
         const marker = L.circleMarker([p.lat, p.lng], {
           radius: 6,
-          color: "#ff0000",
-          fillColor: "#ff0000",
+          color: c,
+          fillColor: c,
           weight: 1,
           opacity: 1,
           fillOpacity: 0.9
@@ -1092,6 +1191,7 @@
         buildDistritoSelect();
         buildBairroSelect();
         buildTicks();
+        buildConventionLegend();
         syncHandleToYear();
         updateDistrictVisibility();
         refreshAll();
