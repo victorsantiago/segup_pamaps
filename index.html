@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mapa – Ocorrências por Região</title>
+  <title>Ocorrências por Região</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -309,7 +309,210 @@
       display:none;
     }
 
-  </style>
+    .time-filters{
+      padding: 6px 8px;
+      border-top: 1px solid #e5e7eb;
+      border-bottom: 1px solid #e5e7eb;
+      background: rgba(255,255,255,0.92);
+    }
+    .time-filters .tf-title{
+      font-weight: 800;
+      font-size: 11px;
+      margin-bottom: 4px;
+      color: #111827;
+      letter-spacing: .2px;
+    }
+    
+    .time-filters .tf-row{
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      flex-wrap:nowrap;
+      white-space:nowrap;
+      overflow-x:auto;
+      padding-bottom: 0px;
+    }
+    .time-filters .tf-row::-webkit-scrollbar{ height: 6px; }
+    .time-filters .tf-row::-webkit-scrollbar-thumb{ background: rgba(17,24,39,0.18); border-radius: 999px; }
+    .time-filters .tf-row::-webkit-scrollbar-track{ background: transparent; }
+
+    .time-filters .chip{
+      display:inline-flex;
+      align-items:center;
+      gap: 6px;
+      border-radius:999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      line-height:1;
+      border:1px solid rgba(17,24,39,0.18);
+      background: rgba(255,255,255,0.92);
+      color:#111827;
+      cursor:pointer;
+      user-select:none;
+      transition: transform .06s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+      flex: 0 0 auto;
+    }
+    .time-filters .chip:hover{ transform: translateY(-1px); }
+    .time-filters .chip:active{ transform: translateY(0px); }
+    .time-filters .chip:focus-visible{
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.22);
+      border-color: rgba(37,99,235,0.55);
+    }
+    .time-filters .chip.active{
+      background: rgba(37,99,235,0.10);
+      border-color: rgba(37,99,235,0.55);
+      box-shadow: inset 0 0 0 1px rgba(37,99,235,0.15);
+      font-weight: 700;
+    }
+    .time-filters .chip-all{
+      font-weight: 800;
+    }
+
+    .time-filters .swatch{
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      border: 1px solid rgba(0,0,0,0.18);
+      display:inline-block;
+      flex: 0 0 auto;
+    }
+
+    /* Oculta o título em telas menores */
+    @media (max-width: 720px){
+      header .time-filters .tf-title{ display:none; }
+      header .time-filters{ padding-top:10px; }
+    }
+
+    header .time-filters{
+      width:100%;
+      margin-top: 6px;
+      border:0;
+      border-radius: 12px;
+      background:#eef2f9;
+      box-shadow: inset 0 0 0 1px #dbe3f0;
+    }
+    header .time-filters .tf-title{
+      color:#374151;
+    }
+
+    .ms{
+      position: relative;
+      display:inline-block;
+      width: 220px;
+      max-width: 220px;
+    }
+    .ms-btn{
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid rgba(17,24,39,0.18);
+      background:#fff;
+      color:#111827;
+      font-size:13px;
+      line-height:1.1;
+      cursor:pointer;
+      box-shadow: 0 1px 0 rgba(17,24,39,0.04);
+      user-select:none;
+    }
+    .ms-btn:focus-visible{
+      outline:none;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.18);
+      border-color: rgba(37,99,235,0.55);
+    }
+    .ms-label{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-width:0;
+    }
+    .ms-label .ms-title{
+      font-weight:700;
+      color:#374151;
+      white-space:nowrap;
+    }
+    .ms-label .ms-value{
+      color:#111827;
+      font-weight:600;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      max-width: 280px;
+    }
+    .ms-caret{
+      opacity:.7;
+      font-size:12px;
+    }
+    .ms-panel{
+      position:absolute;
+      top: calc(100% + 6px);
+      left:0;
+      z-index: 2000;
+      width: 340px;
+      max-width: min(200px, 80vw);
+      padding:10px;
+      border-radius:14px;
+      border:1px solid rgba(17,24,39,0.14);
+      background: rgba(255,255,255,0.98);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+      display:none;
+    }
+    .ms.open .ms-panel{ display:block; }
+    .ms-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:6px 6px;
+      border-radius:10px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .ms-row:hover{ background: rgba(37,99,235,0.06); }
+    .ms-left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+    .ms-swatch{
+      width:10px;
+      height:10px;
+      border-radius:3px;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25);
+      flex:0 0 auto;
+    }
+    .ms-text{
+      font-size:13px;
+      color:#111827;
+      font-weight:600;
+      white-space:nowrap;
+    }
+    .ms-row input{
+      width:16px;
+      height:16px;
+      accent-color: #2563eb;
+      flex:0 0 auto;
+    }
+    .ms-help{
+      margin-top:8px;
+      font-size:12px;
+      color:#6b7280;
+    }
+    #timeFilters{ display:none !important; }
+
+    #timeMs{ display:none; }
+
+    .ms-btn{ box-sizing:border-box; }
+    .ms-label{ flex: 1 1 auto; min-width:0; }
+    .ms-label .ms-title{ flex: 0 0 auto; }
+    .ms-label .ms-value{ flex: 1 1 auto; max-width: 120px; }
+
+</style>
 </head>
 
 <body>
@@ -317,7 +520,7 @@
     <header>
       <div class="title-block">
         <h1>Segurança Pública no Pará (Ocorrências por Distrito/Bairro)</h1>
-        <span class="fonte">Fonte: SEGUP - Secretaria de Estado de Segurança Pública e Defesa Social (2020-10/2025).</span>
+        <span class="fonte">Fonte: SEGUP - Secretaria de Estado de Segurança Pública e Defesa Social (2020-11/2025).</span>
       </div>
       <div class="controls">
         <label class="badge">Tipo:
@@ -358,6 +561,91 @@
           </select>
         </label>
 
+        <div class="ms" id="timeMs" title="Filtrar pontos por faixa de horário (permite múltipla seleção)">
+          <button type="button" class="ms-btn" id="timeMsBtn" aria-haspopup="true" aria-expanded="false">
+            <span class="ms-label">
+              <span class="ms-title">Horários:</span>
+              <span class="ms-value" id="timeMsValue">Todas</span>
+            </span>
+            <span class="ms-caret">▾</span>
+          </button>
+          <div class="ms-panel" id="timeMsPanel" role="menu" aria-label="Selecionar faixas de horário">
+            <div class="ms-row" data-ms="all">
+              <div class="ms-left">
+                <span class="ms-text">Todas</span>
+              </div>
+              <input type="checkbox" id="ms_all" checked />
+            </div>
+
+            <div class="ms-row" data-ms="yellow">
+              <div class="ms-left">
+                <span class="ms-swatch" style="background:#ffeb3b"></span>
+                <span class="ms-text">00:01–06:00</span>
+              </div>
+              <input type="checkbox" id="ms_yellow" checked />
+            </div>
+
+            <div class="ms-row" data-ms="green">
+              <div class="ms-left">
+                <span class="ms-swatch" style="background:#8bc34a"></span>
+                <span class="ms-text">06:01–12:00</span>
+              </div>
+              <input type="checkbox" id="ms_green" checked />
+            </div>
+
+            <div class="ms-row" data-ms="orange">
+              <div class="ms-left">
+                <span class="ms-swatch" style="background:#ff9800"></span>
+                <span class="ms-text">12:01–18:00</span>
+              </div>
+              <input type="checkbox" id="ms_orange" checked />
+            </div>
+
+            <div class="ms-row" data-ms="red">
+              <div class="ms-left">
+                <span class="ms-swatch" style="background:#ff0000"></span>
+                <span class="ms-text">18:01–00:00</span>
+              </div>
+              <input type="checkbox" id="ms_red" checked />
+            </div>
+
+            <div class="ms-help">Dica: você pode marcar mais de uma faixa.</div>
+          </div>
+        </div>
+
+<div class="ms" id="monthMs" style="display:none" title="Filtrar pontos por mês (permite múltipla seleção)">
+  <button type="button" class="ms-btn" id="monthMsBtn" aria-haspopup="true" aria-expanded="false">
+    <span class="ms-label">
+      <span class="ms-title">Mês:</span>
+      <span class="ms-value" id="monthMsValue">Todos</span>
+    </span>
+    <span class="ms-caret">▾</span>
+  </button>
+  <div class="ms-panel" id="monthMsPanel" role="menu" aria-label="Selecionar meses">
+    <div class="ms-row" data-ms="all">
+      <div class="ms-left">
+        <span class="ms-text">Todos</span>
+      </div>
+      <input type="checkbox" id="mon_all" checked />
+    </div>
+
+    <div class="ms-row" data-ms="1"><div class="ms-left"><span class="ms-text">Jan</span></div><input type="checkbox" id="mon_1" checked /></div>
+    <div class="ms-row" data-ms="2"><div class="ms-left"><span class="ms-text">Fev</span></div><input type="checkbox" id="mon_2" checked /></div>
+    <div class="ms-row" data-ms="3"><div class="ms-left"><span class="ms-text">Mar</span></div><input type="checkbox" id="mon_3" checked /></div>
+    <div class="ms-row" data-ms="4"><div class="ms-left"><span class="ms-text">Abr</span></div><input type="checkbox" id="mon_4" checked /></div>
+    <div class="ms-row" data-ms="5"><div class="ms-left"><span class="ms-text">Mai</span></div><input type="checkbox" id="mon_5" checked /></div>
+    <div class="ms-row" data-ms="6"><div class="ms-left"><span class="ms-text">Jun</span></div><input type="checkbox" id="mon_6" checked /></div>
+    <div class="ms-row" data-ms="7"><div class="ms-left"><span class="ms-text">Jul</span></div><input type="checkbox" id="mon_7" checked /></div>
+    <div class="ms-row" data-ms="8"><div class="ms-left"><span class="ms-text">Ago</span></div><input type="checkbox" id="mon_8" checked /></div>
+    <div class="ms-row" data-ms="9"><div class="ms-left"><span class="ms-text">Set</span></div><input type="checkbox" id="mon_9" checked /></div>
+    <div class="ms-row" data-ms="10"><div class="ms-left"><span class="ms-text">Out</span></div><input type="checkbox" id="mon_10" checked /></div>
+    <div class="ms-row" data-ms="11"><div class="ms-left"><span class="ms-text">Nov</span></div><input type="checkbox" id="mon_11" checked /></div>
+    <div class="ms-row" data-ms="12"><div class="ms-left"><span class="ms-text">Dez</span></div><input type="checkbox" id="mon_12" checked /></div>
+
+    <div class="ms-help">Dica: você pode marcar mais de um mês.</div>
+  </div>
+</div>
+
         <span class="badge"><strong id="sumTotal">—</strong> total no ano</span>
 
         <label class="badge">
@@ -367,6 +655,36 @@
 
         <button id="btnReset" class="badge" style="cursor:pointer;">Limpar</button>
       </div>
+      
+      <div class="time-filters" id="timeFilters" style="display:none">
+        <div class="tf-title" id="tfTitle">Horários (filtro dos pontos)</div>
+        <div class="tf-row" id="tfRow" aria-label="Filtro por horário">
+          <button type="button" class="chip chip-all active" id="tf_all" data-bucket="all" title="Exibir todas as ocorrências do bairro no ano selecionado">
+            Todos
+          </button>
+
+          <button type="button" class="chip active" id="tf_yellow" data-bucket="yellow" title="00:01–06:00">
+            <span class="swatch" style="background:#ffeb3b"></span>
+            00:01–06:00
+          </button>
+
+          <button type="button" class="chip active" id="tf_green" data-bucket="green" title="06:01–12:00">
+            <span class="swatch" style="background:#8bc34a"></span>
+            06:01–12:00
+          </button>
+
+          <button type="button" class="chip active" id="tf_orange" data-bucket="orange" title="12:01–18:00">
+            <span class="swatch" style="background:#ff9800"></span>
+            12:01–18:00
+          </button>
+
+          <button type="button" class="chip active" id="tf_red" data-bucket="red" title="18:01–00:00">
+            <span class="swatch" style="background:#ff0000"></span>
+            18:01–00:00
+          </button>
+        </div>
+      </div>
+
     </header>
 
     <div id="map"></div>
@@ -395,6 +713,7 @@
       <span>Bairros</span>
       <button id="legendBtn">▼</button>
     </div>
+    
     <div class="items" id="colorLegendItems"></div>
     <div class="conv" id="convLegend"></div>
   </div>
@@ -444,6 +763,48 @@
         .replace(/\s+/g," ")
         .trim()
         .toUpperCase();
+    }
+
+    // ------------------------------
+    // Leitura robusta de colunas (CSV)
+    // ------------------------------
+    function getValueByNormalizedHeader(row, normalizedTargets){
+      // normalizedTargets: array de strings NORMALIZADAS (normalizeName) e SEM ESPAÇOS
+      try{
+        if (!row) return undefined;
+        const keys = Object.keys(row);
+        for (const key of keys){
+          const nk = normalizeName(String(key).replace(/^\uFEFF/, "")).replace(/\s+/g,"");
+          if (normalizedTargets.includes(nk)) return row[key];
+        }
+      }catch(e){}
+      return undefined;
+    }
+
+    function getMesFromRow(row){
+      // Aceita: mes, mês, MES, Mes, etc.
+      return getValueByNormalizedHeader(row, ["MES","MÊS","MESDOFATO","MESFATO","MESOCORRENCIA","MESOCORR"]);
+    }
+
+    // Busca valor de uma coluna aceitando variações no cabeçalho (espaços/BOM/acentos/caixa)
+    function getRowValueByHeader(row, wanted){
+      try{
+        if (!row) return undefined;
+
+        // 1) correspondência exata
+        for (const k of wanted){
+          if (Object.prototype.hasOwnProperty.call(row, k)) return row[k];
+        }
+
+        // 2) correspondência por normalização do cabeçalho
+        const wantedNorm = wanted.map(w => normalizeName(w));
+        const keys = Object.keys(row);
+        for (const key of keys){
+          const nk = normalizeName(String(key).replace(/^\uFEFF/, ""));
+          if (wantedNorm.includes(nk)) return row[key];
+        }
+      }catch(e){}
+      return undefined;
     }
 
     function slug(s){
@@ -506,6 +867,494 @@
       return "#ff0000";
     }
 
+    
+    function bucketForHoraFato(hhmmss){
+      // Retorna: 'yellow' | 'green' | 'orange' | 'red'
+      const t = parseTimeToSeconds(hhmmss);
+      if (!Number.isFinite(t)) return "red";
+
+      const s00_00 = 0;
+      const s00_01 = 60;
+      const s06_00 = 6 * 3600;
+      const s06_01 = 6 * 3600 + 60;
+      const s12_00 = 12 * 3600;
+      const s12_01 = 12 * 3600 + 60;
+      const s18_00 = 18 * 3600;
+      const s18_01 = 18 * 3600 + 60;
+
+      if (t >= s00_01 && t <= s06_00) return "yellow";
+      if (t >= s06_01 && t <= s12_00) return "green";
+      if (t >= s12_01 && t <= s18_00) return "orange";
+      if (t >= s18_01 || t === s00_00) return "red";
+      return "red";
+    }
+
+    function getSelectedTimeBuckets(){
+      // Se "Todos" estiver ativo, mostramos todas as faixas.
+      // Caso contrário, retornamos apenas as faixas ativas (pode ficar vazio).
+      if (tfAll && tfAll.classList.contains("active")) return ["yellow","green","orange","red"];
+      const sel = [];
+      if (tfYellow && tfYellow.classList.contains("active")) sel.push("yellow");
+      if (tfGreen  && tfGreen.classList.contains("active"))  sel.push("green");
+      if (tfOrange && tfOrange.classList.contains("active")) sel.push("orange");
+      if (tfRed    && tfRed.classList.contains("active"))    sel.push("red");
+      return sel; // pode ser []
+    }
+
+
+function getSelectedMonths(){
+  if (typeof window.__getSelectedMonths === "function"){
+    const v = window.__getSelectedMonths();
+    return Array.isArray(v) ? v : [];
+  }
+  // fallback: sem UI inicializada -> todos
+  return [1,2,3,4,5,6,7,8,9,10,11,12];
+}
+
+    function syncTimeFiltersUI(){
+      const bairroSel = bairroSelEl.value;
+      const shouldShow = (bairroSel && bairroSel !== "__all__");
+      if (!timeFiltersEl) return;
+
+      timeFiltersEl.style.display = shouldShow ? "block" : "none";
+
+      // Ao sair do modo bairro específico, volta para "Todos"
+      if (!shouldShow && tfAll){
+        tfAll.classList.add("active");
+        [tfYellow, tfGreen, tfOrange, tfRed].forEach(b => { if (b) b.classList.add("active"); });
+      }
+    }
+
+    
+    // =========================
+    // MULTISELECT DE HORÁRIOS (COMBOBOX)
+    // =========================
+    function initTimeMultiSelect(){
+      const ms = document.getElementById("timeMs");
+      const btn = document.getElementById("timeMsBtn");
+      const panel = document.getElementById("timeMsPanel");
+      const valueEl = document.getElementById("timeMsValue");
+
+      if (!ms || !btn || !panel || !valueEl) return;
+
+
+      // Exibe o combobox apenas quando um bairro específico estiver selecionado (≠ __all__)
+      function syncTimeMsVisibility(){
+        const bairroSel = (typeof bairroSelEl !== "undefined" && bairroSelEl) ? bairroSelEl.value : null;
+        const show = !!bairroSel && bairroSel !== "__all__";
+        ms.style.display = show ? "inline-block" : "none";
+        // ao esconder, fecha o painel
+        if (!show){
+          ms.classList.remove("open");
+          btn.setAttribute("aria-expanded", "false");
+        }
+      }
+
+
+      const cbAll = document.getElementById("ms_all");
+      const cb = {
+        yellow: document.getElementById("ms_yellow"),
+        green: document.getElementById("ms_green"),
+        orange: document.getElementById("ms_orange"),
+        red: document.getElementById("ms_red"),
+      };
+
+      const rowClickToggle = (row) => {
+        const key = row.getAttribute("data-ms");
+        const input = row.querySelector("input[type='checkbox']");
+        if (!input) return;
+
+        // Se clicar na linha (fora do checkbox), alterna
+        input.checked = !input.checked;
+        onMultiSelectChanged(key);
+      };
+
+      // abre/fecha
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const open = ms.classList.toggle("open");
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+
+      // fecha ao clicar fora
+      document.addEventListener("click", (e) => {
+        if (!ms.classList.contains("open")) return;
+        if (ms.contains(e.target)) return;
+        ms.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+      });
+
+      // evita fechar quando clicar dentro do painel
+      panel.addEventListener("click", (e) => {
+        // Se clicou numa linha, alterna
+        const row = e.target.closest(".ms-row");
+        if (row && e.target.tagName !== "INPUT"){
+          rowClickToggle(row);
+        }
+      });
+
+      // muda pelos checkboxes
+      Object.entries(cb).forEach(([k, el]) => {
+        if (!el) return;
+        el.addEventListener("change", () => onMultiSelectChanged(k));
+      });
+      if (cbAll) cbAll.addEventListener("change", () => onMultiSelectChanged("all"));
+
+      function selectedBuckets(){
+        return Object.keys(cb).filter(k => cb[k] && cb[k].checked);
+      }
+
+      function syncHiddenChips(){
+        // Mantém compatibilidade: atualiza os chips existentes (mesmo ocultos)
+        const chipAll = document.querySelector(".chip-all");
+        const chipMap = {
+          yellow: document.getElementById("tf_yellow"),
+          green: document.getElementById("tf_green"),
+          orange: document.getElementById("tf_orange"),
+          red: document.getElementById("tf_red"),
+        };
+
+        const buckets = selectedBuckets();
+
+        // Se "Todas" marcado ou nenhuma faixa marcada -> ativa tudo
+        const allMode = (cbAll && cbAll.checked) || buckets.length === 0;
+
+        if (chipAll){
+          chipAll.classList.toggle("active", allMode);
+        }
+        Object.keys(chipMap).forEach(k => {
+          const el = chipMap[k];
+          if (!el) return;
+          el.classList.toggle("active", allMode ? true : buckets.includes(k));
+        });
+      }
+
+      function updateLabel(){
+        const buckets = selectedBuckets();
+        const allMode = (cbAll && cbAll.checked) || buckets.length === 0;
+        if (allMode){
+          valueEl.textContent = "Todas";
+          return;
+        }
+        // Texto compacto para não mudar o layout do menu
+        valueEl.textContent = `${buckets.length} faixa${buckets.length > 1 ? "s" : ""}`;
+      }
+
+      function enforceRules(lastKey){
+  // Regras:
+  // - Se marcar "Todas", todas as faixas são marcadas
+  // - Se desmarcar qualquer faixa individual, "Todas" é desmarcado
+  // - Se marcar as 4 faixas individualmente, "Todas" é marcado
+
+  const buckets = selectedBuckets();
+
+  // Clique direto em "Todas"
+  if (lastKey === "all" && cbAll && cbAll.checked){
+    Object.values(cb).forEach(el => { if (el) el.checked = true; });
+    return;
+  }
+
+  // Se veio de uma faixa individual e "Todas" ainda está marcada, mas já não temos 4 faixas,
+  // então desmarca "Todas" (não força re-marcar tudo).
+  if (lastKey !== "all" && cbAll && cbAll.checked && buckets.length < 4){
+    cbAll.checked = false;
+  }
+
+  // Se todas as faixas estiverem marcadas, ativa "Todas"
+  if (cbAll && buckets.length === 4){
+    cbAll.checked = true;
+  }
+
+  // Se o usuário desmarcou todas as faixas, volta para "Todas"
+  // (evita ficar sem nenhum ponto no mapa)
+  if (buckets.length === 0){
+    if (cbAll) cbAll.checked = true;
+    Object.values(cb).forEach(el => { if (el) el.checked = true; });
+  }
+}
+
+// exposto para o wireTimeFilterEvents
+      window.__getSelectedTimeBuckets = () => {
+        const buckets = selectedBuckets();
+        const allMode = (cbAll && cbAll.checked) || buckets.length === 0;
+        return allMode ? ["yellow","green","orange","red"] : buckets;
+      };
+
+      function onMultiSelectChanged(lastKey){
+        enforceRules(lastKey);
+        updateLabel();
+        syncHiddenChips();
+
+        // Dispara o mesmo fluxo que o filtro de horário sempre usou
+        if (typeof window.__onTimeFiltersChanged === "function"){
+          window.__onTimeFiltersChanged();
+        }
+      }
+
+      
+
+      // reage a mudanças do filtro Bairro
+      try{
+        if (typeof bairroSelEl !== "undefined" && bairroSelEl){
+          bairroSelEl.addEventListener("change", () => {
+            syncTimeMsVisibility();
+          });
+        }
+      }catch(e){}
+      syncTimeMsVisibility();
+      // Inicializa estado
+      enforceRules("all");
+      updateLabel();
+      syncHiddenChips();
+    }
+
+
+// =========================
+// SUPORTE A FILTROS: DIA DA SEMANA / MÊS (COMBOBOX MULTISELECT)
+// Regras: aparecem apenas quando um bairro específico (≠ __all__) está selecionado.
+// =========================
+
+function monthKeyFromValue(v){
+  if (v === null || v === undefined) return null;
+  if (typeof v === "number" && Number.isFinite(v)){
+    const n = Math.round(v);
+    return (n >= 1 && n <= 12) ? n : null;
+  }
+  let s = String(v).trim();
+  if (!s) return null;
+
+  // tenta número primeiro
+  const n = parseInt(s, 10);
+  if (!isNaN(n) && n >= 1 && n <= 12) return n;
+
+  // normaliza nomes (pt-br) e abreviações comuns
+  const k = normalizeName(s);
+  const map = {
+    "JANEIRO":1, "JAN":1,
+    "FEVEREIRO":2, "FEV":2,
+    "MARCO":3, "MAR":3,
+    "ABRIL":4, "ABR":4,
+    "MAIO":5, "MAI":5,
+    "JUNHO":6, "JUN":6,
+    "JULHO":7, "JUL":7,
+    "AGOSTO":8, "AGO":8,
+    "SETEMBRO":9, "SET":9,
+    "OUTUBRO":10, "OUT":10,
+    "NOVEMBRO":11, "NOV":11,
+    "DEZEMBRO":12, "DEZ":12
+  };
+  return map[k] || null;
+}
+
+
+// Normaliza qualquer representacao de dia da semana para as chaves SEG/TER/QUA/QUI/SEX/SAB/DOM.
+// Aceita: SEG, TER, QUA, QUI, SEX, SAB, DOM; ou formatos por extenso.
+// Retorna null se nao conseguir identificar.
+function initMonthMultiSelect(){
+  const ms = document.getElementById("monthMs");
+  const btn = document.getElementById("monthMsBtn");
+  const panel = document.getElementById("monthMsPanel");
+  const valueEl = document.getElementById("monthMsValue");
+  if (!ms || !btn || !panel || !valueEl) return;
+
+  function syncVisibility(){
+    const bairroSel = (typeof bairroSelEl !== "undefined" && bairroSelEl) ? bairroSelEl.value : null;
+    const show = !!bairroSel && bairroSel !== "__all__";
+    ms.style.display = show ? "inline-block" : "none";
+    if (!show){
+      ms.classList.remove("open");
+      btn.setAttribute("aria-expanded","false");
+      if (cbAll) cbAll.checked = true;
+      Object.values(cb).forEach(el => { if (el) el.checked = true; });
+      updateLabel();
+    }
+  }
+
+  const cbAll = document.getElementById("mon_all");
+  const cb = {};
+  for (let i=1;i<=12;i++){
+    cb[i] = document.getElementById("mon_"+i);
+  }
+
+  const monthNames = {1:"Jan",2:"Fev",3:"Mar",4:"Abr",5:"Mai",6:"Jun",7:"Jul",8:"Ago",9:"Set",10:"Out",11:"Nov",12:"Dez"};
+
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    const open = ms.classList.toggle("open");
+    btn.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!ms.classList.contains("open")) return;
+    if (ms.contains(e.target)) return;
+    ms.classList.remove("open");
+    btn.setAttribute("aria-expanded", "false");
+  });
+
+  panel.addEventListener("click", (e) => {
+    const row = e.target.closest(".ms-row");
+    if (row && e.target.tagName !== "INPUT"){
+      const input = row.querySelector("input[type='checkbox']");
+      if (!input) return;
+      input.checked = !input.checked;
+      const k = row.getAttribute("data-ms");
+      const kk = (k === "all") ? "all" : parseInt(k,10);
+      onChanged(Number.isFinite(kk) ? kk : k);
+    }
+  });
+
+  Object.values(cb).forEach((el, idx) => {
+    if (!el) return;
+    // idx aqui não é o mês, então extraímos do id mon_#
+    const m = parseInt((el.id || "").replace("mon_",""),10);
+    el.addEventListener("change", () => onChanged(Number.isFinite(m) ? m : "month"));
+  });
+  if (cbAll) cbAll.addEventListener("change", () => onChanged("all"));
+
+  function selectedKeys(){
+    return Object.keys(cb).map(k=>parseInt(k,10)).filter(k => cb[k] && cb[k].checked);
+  }
+
+  function enforceRules(lastKey){
+  const total = 12;
+  const keys = selectedKeys();
+
+  // Regras:
+  // - Se clicar em "Todos", marca Jan..Dez
+  // - Se desmarcar qualquer mês individual, "Todos" é desmarcado
+  // - Se marcar Jan..Dez individualmente, "Todos" é marcado
+
+  // Clique direto em "Todos"
+  if (lastKey === "all" && cbAll && cbAll.checked){
+    Object.values(cb).forEach(el => { if (el) el.checked = true; });
+    return;
+  }
+
+  // Se veio de um mês individual e "Todos" ainda está marcado, mas já não temos 12 meses,
+  // então desmarca "Todos" (não força re-marcar tudo).
+  if (lastKey !== "all" && cbAll && cbAll.checked && keys.length < total){
+    cbAll.checked = false;
+  }
+
+  // Se todos os meses estiverem marcados individualmente, ativa "Todos"
+  if (cbAll && keys.length === total){
+    cbAll.checked = true;
+  }
+
+  // Se não sobrou nada marcado, volta para "Todos"
+  if (keys.length === 0){
+    if (cbAll) cbAll.checked = true;
+    Object.values(cb).forEach(el => { if (el) el.checked = true; });
+  }
+}
+
+function updateLabel(){
+    const keys = selectedKeys();
+    const allMode = (cbAll && cbAll.checked) || keys.length === 0;
+    if (allMode){
+      valueEl.textContent = "Todos";
+      return;
+    }
+    if (keys.length <= 2){
+      valueEl.textContent = keys.map(k => monthNames[k] || String(k)).join(", ");
+      return;
+    }
+    valueEl.textContent = `${keys.length} meses`;
+  }
+
+  window.__getSelectedMonths = () => {
+    const keys = selectedKeys();
+    const allMode = (cbAll && cbAll.checked) || keys.length === 0;
+    return allMode ? Object.keys(cb).map(k=>parseInt(k,10)) : keys;
+  };
+
+  function onChanged(lastKey){
+    enforceRules(lastKey);
+    updateLabel();
+    if (typeof window.__onTimeFiltersChanged === "function"){
+      window.__onTimeFiltersChanged();
+    } else {
+      updateMarkers();
+      refreshAnyBairroPopup();
+    }
+  }
+
+  try{
+    if (typeof bairroSelEl !== "undefined" && bairroSelEl){
+      bairroSelEl.addEventListener("change", syncVisibility);
+    }
+  }catch(e){}
+  enforceRules("all");
+  updateLabel();
+  syncVisibility();
+}
+
+function wireTimeFilterEvents(){
+      // Quando o usuário altera os chips de horário, precisamos:
+      // 1) atualizar os pontos exibidos (markers) e
+      // 2) atualizar o popup fixo do bairro para refletir o mesmo recorte.
+      const onTimeFiltersChanged = () => {
+        // Fecha qualquer popup aberto ao mexer nos horários
+        try { map.closePopup(); } catch(e) {}
+        try { openPopupRef = null; } catch(e) {}
+        try { openPopupRegionKey = null; } catch(e) {}
+        try { fixedPopupRef = null; } catch(e) {}
+        try { fixedPopupRegionKey = null; } catch(e) {}
+        updateMarkers();
+        try{ refreshFixedPopup(); }catch(e){}
+        try{ refreshAnyBairroPopup(); }catch(e){}
+      };
+
+      // expõe para o multiselect disparar o mesmo fluxo
+      window.__onTimeFiltersChanged = onTimeFiltersChanged;
+      if (!tfAll) return;
+
+      const setActive = (btn, on) => {
+        if (!btn) return;
+        btn.classList.toggle("active", !!on);
+        btn.setAttribute("aria-pressed", !!on ? "true" : "false");
+      };
+
+      const updateAllState = () => {
+        const allOn =
+          (!!tfYellow && tfYellow.classList.contains("active")) &&
+          (!!tfGreen  && tfGreen.classList.contains("active")) &&
+          (!!tfOrange && tfOrange.classList.contains("active")) &&
+          (!!tfRed    && tfRed.classList.contains("active"));
+        setActive(tfAll, allOn);
+      };
+
+      // Inicializa aria-pressed
+      [tfAll, tfYellow, tfGreen, tfOrange, tfRed].forEach(b => {
+        if (!b) return;
+        b.setAttribute("aria-pressed", b.classList.contains("active") ? "true" : "false");
+      });
+
+      tfAll.addEventListener("click", () => {
+        // "Todos" liga tudo
+        setActive(tfAll, true);
+        [tfYellow, tfGreen, tfOrange, tfRed].forEach(b => setActive(b, true));
+        onTimeFiltersChanged();
+      });
+
+      const onSpecClick = (btn) => {
+        // Toggle do chip específico
+        const nowOn = !btn.classList.contains("active");
+        setActive(btn, nowOn);
+
+        // Se qualquer específico foi desligado, "Todos" deve desligar
+        // Se todos específicos ligarem, "Todos" liga.
+        updateAllState();
+        onTimeFiltersChanged();
+      };
+
+      [tfYellow, tfGreen, tfOrange, tfRed].forEach(btn => {
+        if (!btn) return;
+        btn.addEventListener("click", () => onSpecClick(btn));
+      });
+    }
+
+
     function labelForHoraFato(hhmmss){
       const t = parseTimeToSeconds(hhmmss);
       if (!Number.isFinite(t)) return "—";
@@ -529,6 +1378,12 @@
     const districtNameByKey = {};
     const popupLayer = L.layerGroup().addTo(map);
     const markersLayer = L.layerGroup().addTo(map);
+    // --- controle de popup aberto (interativo) e popup fixo (bairro selecionado) ---
+    let openPopupRef = null;
+    let openPopupRegionKey = null;
+    let fixedPopupRef = null;
+    let fixedPopupRegionKey = null;
+
     const labelsLayer  = L.layerGroup().addTo(map);
     const polygonCache = {};
 
@@ -618,7 +1473,13 @@
               bairroRaw,
               bairroKey,
               distrito: distritoRaw,
-              mes: r.mes || "",
+              // CSVs no formato esperado (ex.: colunas "mes" e "dia"):
+              //   mes: JANEIRO, FEVEREIRO, ... (em maiúsculas)
+              //   dia: SEG, TER, QUA, QUI, SEX, SAB, DOM
+              // Mantém compatibilidade com outros nomes de coluna já usados.
+              mes: (getMesFromRow(r) ?? ""),
+              mesKey: monthKeyFromValue(getMesFromRow(r) ?? ""),
+
               local: r.local_ocorrencia || "",
               horafato: r.horafato ?? r.HORA_FATO ?? r.HORAFATO ?? r.hora_fato ?? r.HoraFato ?? r.horaFato ?? "",
               typeKey: src.key,
@@ -729,14 +1590,13 @@
 
             group.eachLayer(function(lyr){
               lyr.on("click", (e) => {
-                // fecha o popup fixo antes de abrir o novo
+                // fecha o popup fixo antes de abrir o novo (mantém o popup interativo como o "ativo")
                 popupLayer.clearLayers();
-                const html = buildPopupHtmlForRegion(key);
+                fixedPopupRef = null;
+                fixedPopupRegionKey = null;
+
                 const latlng = e.latlng || (lyr.getBounds ? lyr.getBounds().getCenter() : map.getCenter());
-                L.popup()
-                  .setLatLng(latlng)
-                  .setContent(html)
-                  .openOn(map);
+                openOrUpdateInteractivePopup(key, latlng);
               });
             });
 
@@ -780,6 +1640,14 @@
     const distritoSelEl = document.getElementById("distritoSel");
     const bairroSelEl = document.getElementById("bairroSel");
     const pillToggle = document.getElementById("pillToggle");
+
+    // --- filtros de horário (visível apenas quando bairro específico é selecionado) ---
+    const timeFiltersEl = document.getElementById("timeFilters");
+    const tfAll    = document.getElementById("tf_all");
+    const tfYellow = document.getElementById("tf_yellow");
+    const tfGreen  = document.getElementById("tf_green");
+    const tfOrange = document.getElementById("tf_orange");
+    const tfRed    = document.getElementById("tf_red");
 
     function buildYearSelect(){
       const sel = document.getElementById("anoSel");
@@ -943,19 +1811,61 @@
 
       document.getElementById("sumTotal").textContent = totalAno.toLocaleString("pt-BR");
       refreshFixedPopup();
+      refreshAnyBairroPopup();
+      syncTimeFiltersUI();
       updateMarkers();
       buildColorLegend();
       syncHandleToYear();
     }
 
     function buildPopupHtmlForRegion(key){
+      // Popup do bairro refletindo filtros (tipo/ano/horário)
       const name = districtNameByKey[key] || (bairrosMeta[key] && bairrosMeta[key].name) || key;
-      const aggYears = getActiveAgg();
-      const yearObj = aggYears[currentYear] || { byRegion:{} };
-      const info = yearObj.byRegion[key];
 
-      const total = info ? info.total : 0;
-      const byType = info ? info.byType : {};
+      const tipoSelKey = getSelectedTypeKey();
+      const tipoLabel  = getSelectedTypeLabel();
+      const ano = currentYear;
+
+      // Base de pontos para o ano/tipo selecionados
+      let pts = [];
+      if (tipoSelKey === "__all__"){
+        pts = pointsAll[ano] || [];
+      } else {
+        pts = (pointsPerType[tipoSelKey] && pointsPerType[tipoSelKey][ano]) || [];
+      }
+
+      // Filtros de horário (chips)
+      const buckets = getSelectedTimeBuckets();
+      const useTimeFilter = Array.isArray(buckets) && buckets.length > 0;
+
+      const monthsSel = getSelectedMonths();
+
+      const monthActive = Array.isArray(monthsSel) && monthsSel.length > 0 && monthsSel.length < 12;
+
+      // Agrega somente o bairro selecionado. Se nenhuma faixa estiver selecionada (e 'Todos' não estiver ativo),
+      // o popup permanece com os números totais (sem filtro por horário).
+      // Observação: NÃO filtramos por polígono aqui para manter a nota:
+      // registros fora do limite do bairro são considerados no total, mas não exibidos como pontos.
+      let total = 0;
+      const byType = {};
+
+      for (const p of pts){
+        if (p.bairroKey !== key) continue;
+
+        const mk = (p.mesKey ?? monthKeyFromValue(p.mes));
+        if (monthActive){
+          if (!mk) continue;
+          if (!monthsSel.includes(mk)) continue;
+        }
+
+        const b = bucketForHoraFato(p.horafato);
+        if (useTimeFilter && !buckets.includes(b)) continue;
+
+        total += 1;
+        const lbl = p.typeLabel || tipoLabel;
+        byType[lbl] = (byType[lbl] || 0) + 1;
+      }
+
       const rows = Object.entries(byType).sort((a,b)=>b[1]-a[1]);
 
       const table = rows.length
@@ -964,33 +1874,82 @@
           + '</tbody></table>'
         : '<i>Sem detalhamento por tipo</i>';
 
-      const tipoLabel = getSelectedTypeLabel();
-
       return [
         '<b>'+name+'</b>',
-        '<div><b>Ano:</b> '+currentYear+'</div>',
+        '<div><b>Ano:</b> '+ano+'</div>',
         '<div><b>Tipo selecionado:</b> '+tipoLabel+'</div>',
         '<div><b>Total no ano:</b> '+total.toLocaleString("pt-BR")+'</div>',
         table+'<div style="font-size:10px;">*Registros cujas posições geográficas estão fora dos limites do bairro são considerados mas não são exibidos.</div>'
       ].join("");
     }
 
-    function refreshFixedPopup(){
+    
+    // Abre/atualiza popup interativo (quando o usuário clica na área do bairro)
+    function openOrUpdateInteractivePopup(regionKey, latlng){
+      openPopupRegionKey = regionKey;
+      const html = buildPopupHtmlForRegion(regionKey);
+
+      if (openPopupRef && map.hasLayer(openPopupRef)){
+        openPopupRef.setLatLng(latlng);
+        openPopupRef.setContent(html);
+      } else {
+        openPopupRef = L.popup()
+          .setLatLng(latlng)
+          .setContent(html)
+          .openOn(map);
+      }
+    }
+
+    // Atualiza automaticamente qualquer popup de bairro que esteja aberto (interativo e/ou fixo)
+    function refreshAnyBairroPopup(){
+      // 1) popup interativo (clique no polígono)
+      if (openPopupRef && openPopupRegionKey && map.hasLayer(openPopupRef)){
+        openPopupRef
+          .setContent(buildPopupHtmlForRegion(openPopupRegionKey))
+          .update(); // força redesenho do popup aberto
+      }
+
+      // 2) popup fixo (bairro selecionado no combobox)
+      if (fixedPopupRef && fixedPopupRegionKey && map.hasLayer(fixedPopupRef)){
+        fixedPopupRef
+          .setContent(buildPopupHtmlForRegion(fixedPopupRegionKey))
+          .update(); // força redesenho do popup aberto
+      }
+    }
+
+function refreshFixedPopup(){
       popupLayer.clearLayers();
       const bairroSel = bairroSelEl.value;
-      if (!bairroSel || bairroSel === "__all__") return;
+      if (!bairroSel || bairroSel === "__all__") {
+        fixedPopupRef = null;
+        fixedPopupRegionKey = null;
+        return;
+      }
+
       const group = districtLayers[bairroSel];
-      if (!group || !map.hasLayer(group)) return;
+      if (!group || !map.hasLayer(group)) {
+        fixedPopupRef = null;
+        fixedPopupRegionKey = null;
+        return;
+      }
 
       let center;
       try { center = group.getBounds().getCenter(); }
       catch(e){ center = map.getCenter(); }
 
+      fixedPopupRegionKey = bairroSel;
       const html = buildPopupHtmlForRegion(bairroSel);
-      const p = L.popup({ autoClose:false, closeOnClick:false, closeButton:false, className:"auto-popup" })
-                .setLatLng(center)
-                .setContent(html);
-      popupLayer.addLayer(p);
+
+      if (fixedPopupRef) {
+        fixedPopupRef.setLatLng(center);
+        fixedPopupRef.setContent(html);
+      } else {
+        fixedPopupRef = L.popup({ autoClose:false, closeOnClick:false, closeButton:false, className:"auto-popup" })
+          .setLatLng(center)
+          .setContent(html);
+      }
+
+      popupLayer.addLayer(fixedPopupRef);
     }
 
     function buildMarkerPopupHtml(p){
@@ -1023,6 +1982,25 @@
 
       pts.forEach(p => {
         if (p.bairroKey !== bairroSel) return;
+
+        const monthsSel = getSelectedMonths();
+
+const monthSet = new Set(Array.isArray(monthsSel) ? monthsSel : []);
+
+const monthActive = monthSet.size > 0 && monthSet.size < 12;
+
+const mk = (p.mesKey ?? monthKeyFromValue(p.mes));
+if (monthActive){
+  if (!mk) return;
+  if (!monthSet.has(mk)) return;
+}
+
+// Usa a chave já calculada na carga. Se faltar, tenta derivar da string bruta.
+
+const buckets = getSelectedTimeBuckets();
+        const b = bucketForHoraFato(p.horafato);
+        if (buckets.length === 0) return;
+        if (!buckets.includes(b)) return;
         if (!Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return;
         if (!pointInAnyPolygon(p.lat, p.lng, bairroSel)) return;
 
@@ -1217,14 +2195,21 @@
           buildBairroSelect();
           updateDistrictVisibility();
           updatePillToggleState();
+          syncTimeFiltersUI();
           refreshAll();
         });
 
         bairroSelEl.addEventListener("change", () => {
           updateDistrictVisibility();
           updatePillToggleState();
+          syncTimeFiltersUI();
           refreshAll();
         });
+
+        wireTimeFilterEvents();
+      initTimeMultiSelect();
+      initMonthMultiSelect();
+        syncTimeFiltersUI();
 
         pillToggle.addEventListener("change", () => {
           updateRegionLabels();
@@ -1240,6 +2225,7 @@
           popupLayer.clearLayers();
           updateDistrictVisibility();
           updatePillToggleState();
+          syncTimeFiltersUI();
           refreshAll();
         });
 
