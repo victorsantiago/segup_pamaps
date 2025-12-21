@@ -1,2 +1,2 @@
-ano,mes,bairro,distrito,local_ocorrencia,latitude,longitude,horafato
-2019,NOVEMBRO,TERRA FIRME,BELEM,VIA PUBLICA,"-1,4515574","-48,4553033",00:05:00
+ano,mes,dia,bairro,distrito,local_ocorrencia,latitude,longitude,horafato
+2019,NOVEMBRO,QUA,TERRA FIRME,BELEM,VIA PUBLICA,"-1,4515574","-48,4553033",00:05:00
